@@ -18,7 +18,8 @@
     "wow-toc": "^0.1.0"
   },
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./tests/test"
+    "test": "node ./node_modules/mocha/bin/mocha ./tests/test",
+    "start": "node ./bin/wow"
   },
   "bin": {
     "wow": "./bin/wow"
