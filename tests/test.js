@@ -88,10 +88,12 @@ describe('download wow addon into wow folder', function() {
                 should.exist(wowPath);
 
                 let wow = new Wow(wowPath);
-                wow.install('curse', 'Ace3', null, (err, folders) => {
+                wow.install('curse', 'Ace3', null, (err) => {
                     should.not.exist(err);
-                    should.exist(folders);
-                    done()
+                    fs.access(wow.getSaveFile(), fs.constants.R_OK | fs.constants.W_OK, (err) => {
+                        should.not.exist(err);
+                        done();
+                    });
                 })
             })
         })
