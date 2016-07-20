@@ -58,6 +58,31 @@ describe('Curse', function() {
                 done()
             })
         })
+
+        it('should tell the new version of the addon', function(done) {
+            this.timeout(testTimeout)
+            makeTmpWowFolder(function(err, wowPath) {
+                should.not.exist(err);
+                should.exist(wowPath);
+
+                let wow = new Wow(wowPath);
+                let mockAddonData = {
+                    'Ace3': {
+                        platform: 'curse',
+                        version: 0,
+                        folders: null
+                    }
+                }
+                wow.saveFd.write(mockAddonData, (err) => {
+                    should.not.exist(err);
+                    wow.checkupdate('Ace3', (err, isNew, platform, zipUrl, version) => {
+                        should.not.exist(err);
+                        isNew.should.equal(true);
+                        done()
+                    })
+                })
+            })
+        })
     })
 });
 
