@@ -17,3 +17,16 @@ switch (cli.command) {
 		break;
 	}
 }
+
+
+//Figure out the user's WoW install directory
+var wowdir;
+if (process.env.WOWPATH) {
+  wowdir = path.resolve(process.env.WOWPATH);
+} else {
+  log.warn('path', 'Using default WoW path, please set the WOWPATH env variable');
+  wowdir = path.join('C:', 'Program Files (x86)', 'World Of Warcraft');
+}
+
+var addonsdir = path.join(wowdir, 'Interface', 'AddOns');
+var savefile = path.join(wowdir, '.addons.json');
