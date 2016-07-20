@@ -67,10 +67,12 @@ describe('Curse', function() {
 
                 let wow = new Wow(wowPath);
                 let mockAddonData = {
-                    'Ace3': {
-                        platform: 'curse',
-                        version: 0,
-                        folders: null
+                    addons: {
+                        'Ace3': {
+                            platform: 'curse',
+                            version: 0,
+                            folders: null
+                        }
                     }
                 }
                 wow.saveFd.write(mockAddonData, (err) => {
@@ -118,6 +120,30 @@ describe('download wow addon into wow folder', function() {
                     fs.access(wow.getSaveFile(), fs.constants.R_OK | fs.constants.W_OK, (err) => {
                         should.not.exist(err);
                         done();
+                    });
+                })
+            })
+        })
+
+        it('should do as above and delete it', function(done) {
+            this.timeout(testTimeout);
+            let deleteAddon = (wow) => {
+                wow.uninstall('Ace3', (err) => {
+                    let Ace3toc = path.join(wow.getAddonsDir(), 'Ace3', 'Ace3.toc');
+                    fs.access(Ace3toc, fs.constants.R_OK | fs.constants.W_OK, (err) => {
+                        should.exist(err);
+                        err.code.should.equal('ENOENT')
+                        done();
+                    });
+                })
+            }
+
+            makeTmpWowFolder(function(err, wowPath) {
+                let wow = new Wow(wowPath);
+                wow.install('curse', 'Ace3', null, (err) => {
+                    fs.access(wow.getSaveFile(), fs.constants.R_OK | fs.constants.W_OK, (err) => {
+                        should.not.exist(err);
+                        deleteAddon(wow);
                     });
                 })
             })
