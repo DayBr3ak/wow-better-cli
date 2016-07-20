@@ -54,6 +54,25 @@ describe('Curse', function() {
                 done()
             })
         })
+
+        it('promise version: should return the download url of an addon', function(done) {
+            this.timeout(testTimeout)
+            curse.getDownloadURL('Ace3', null)
+                .then((infos) => {
+                    should.exist(infos);
+                    let {url, version} = infos;
+                    should.exist(url);
+                    should.exist(version);
+                    const zipRegex = /\.zip/;
+                    let hasZip = zipRegex.exec(url);
+
+                    should.not.equal(null, hasZip);
+                    should.not.equal(null, version);
+
+                    IsNumeric(version).should.equal(true);
+                    done()
+                })
+        })
     })
 });
 
