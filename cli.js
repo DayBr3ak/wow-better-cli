@@ -17,7 +17,7 @@ let parseOptions = {
 }
 
 if (true) {
-  parseOptions.debug = ['d', 'Debug flag', false, true];
+  parseOptions.debug = ['d', 'Debug flag', true, false];
 }
 
 cli.parse(
@@ -40,6 +40,13 @@ cli.main(function (args, options) {
       commandHandler(wow, args, options);
     })
 })
+
+function cliErrhandler(err) {
+  if (err.code == "EPERM") {
+    return log.error('info', "Please run this program as Administrator, your wow folder is in a protected directory");
+  }
+  log.error('error', err);
+}
 
 function promptWowDir(configFile, data, cb) {
   const readline = require('readline');
@@ -73,7 +80,7 @@ function promptWowDir(configFile, data, cb) {
 
   let handleAnswer = (presumedWowdir) => {
     if (!presumedWowdir) {
-      throw 'error wrong directory specified';
+      return cliErrhandler('error wrong directory specified');
     }
     let newData = data || {};
     newData.wowdir = presumedWowdir;
@@ -95,7 +102,7 @@ function findWowDir(options, cb) {
         return cb(err)
       }
 
-      return cb(null, new Wow(tmpwowpath));
+      return cb(null, new Wow(tmpwowpath, tmpwowpath));
     })
   }
 
@@ -141,8 +148,7 @@ function install(wow, args, options) {
 
   wow.install(platform, addonName, version, (err) => {
     if (err) {
-        log.cli('error', err);
-        // throw err;
+        cliErrhandler(err);
     }
   })
 }
@@ -150,7 +156,7 @@ function install(wow, args, options) {
 function changewow(wow, args, options) {
   wow.saveFd.read((err, data) => {
     if (err) {
-      throw err;
+      return cliErrhandler(err);
     }
     data.wowdir = undefined;
 
