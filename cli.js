@@ -1,12 +1,18 @@
 // cli.js
 'use strict';
 
+// scrape back your addons into addons.json
+
+
+
 const log = require('npmlog');
 const path = require('path');
 const cli = require('cli');
 
 const Save = require('./lib/save.js');
 const Wow = require('./lib/wow.js');
+const util = require('./lib/util.js');
+
 
 log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
 const DEFAULT_PLATFORM = 'curse';
@@ -28,7 +34,7 @@ cli.parse(
 const commands = {
   install: install,
   changewow: changewow,
-
+  ls: ls,
 }
 
 
@@ -83,7 +89,7 @@ function promptWowDir(configFile, data, cb) {
       return cliErrhandler('error wrong directory specified');
     }
     let newData = data || {};
-    newData.wowdir = presumedWowdir;
+    newData.wowdir = path.normalize(presumedWowdir);
     configFile.write(newData, (err) => {
       return cb(newData)
     })
@@ -96,7 +102,6 @@ function findWowDir(options, cb) {
   var wowdir;
 
   if (options && options.debug) {
-    const util = require('./lib/util.js');
     return util.makeTmpWowFolder((err, tmpwowpath) => {
       if (err) {
         return cb(err)
@@ -116,9 +121,7 @@ function findWowDir(options, cb) {
     if (!data || !data.wowdir) {
       // prompt user
       log.cli('shouldprompt', 'hi');
-
       promptWowDir(configFile, data, wowFoundCallback);
-
     } else {
       return wowFoundCallback(data);
     }
@@ -171,5 +174,19 @@ function changewow(wow, args, options) {
         log.cli('changewowdir', 'new dir is ' + data.wowdir)
       })
     }
+  })
+}
+
+function testls(wow, args, options) {
+  log.cli('LS')
+  let addonDir = path.join(wow.wowpath, 'Interface', 'AddOns');
+  let stop = false;
+  util.listMyAddonsInFolder(addonDir, (err, addonFolder) => {
+    if (stop) {
+      return
+    }
+    // stop = true;
+    let projectName = util.getUrlNameFromAddon(addonFolder);
+    console.log(projectName);
   })
 }
