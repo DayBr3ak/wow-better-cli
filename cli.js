@@ -44,12 +44,12 @@ cli.parse(
 );
 
 cli.main(function (args, options) {
-    if (options && options.debug) {
+    if (options && options.debug == 'true') {
       console.log(args)
       console.log(options)
       log.level = 'info'
     } else {
-      log.level = 'error';
+      log.level = 'warn';
     }
     findWowDir(options, (err, wow) => {
       let commandHandler = commands[cli.command];
@@ -111,7 +111,7 @@ function findWowDir(options, cb) {
   //Figure out the user's WoW install directory
   var wowdir;
 
-  if (options && options.debug) {
+  if (options && options.debug == 'true') {
     return util.makeTmpWowFolder((err, tmpwowpath) => {
       if (err) {
         return cb(err)
@@ -227,7 +227,7 @@ function uninstall(wow, args, options) {
     if (err) {
       return cliErrhandler(err);
     }
-    log.info(`${addonName} uninstalled succesfully`);
+    cli.ok(`${addonName} uninstalled succesfully`);
   });
 }
 
