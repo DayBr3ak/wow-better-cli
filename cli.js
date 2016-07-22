@@ -1,10 +1,6 @@
 // cli.js
 'use strict';
 
-// scrape back your addons into addons.json
-
-
-
 const log = require('npmlog');
 const path = require('path');
 const cli = require('cli');
@@ -142,8 +138,8 @@ function findWowDir(options, cb) {
   })
 }
 
-function handleCliError() {
-
+function handleCliError(wow) {
+  bettterHelp(wow);
 }
 
 function install(wow, args, options) {
@@ -151,7 +147,7 @@ function install(wow, args, options) {
 
   if (args.length < 1) {
     // error message
-    handleCliError();
+    handleCliError(wow);
     log.cli('error', 'Should specify addon as argument')
     return
   }
@@ -214,7 +210,7 @@ function uninstall(wow, args, options) {
 
   if (args.length < 1) {
     // error message
-    handleCliError();
+    handleCliError(wow);
     // log.cli('error', 'Should specify addon as argument')
     return
   }
@@ -252,7 +248,7 @@ function checkupdate(wow, args, options) {
   log.cli('checkupdate');
 
   if (args.length > 1) {
-    return handleCliError();
+    return handleCliError(wow);
   }
   if (args.length == 1) {
     let addonName = args[0];
@@ -278,7 +274,6 @@ function checkupdate(wow, args, options) {
       return console.log('Nothing to update');
     }
     console.log('%s addon%s updates: %s', num, (num !== 1 ? 's have' : ' has'), updatesAvailable.join(', '));
-
   })
 }
 
@@ -352,7 +347,7 @@ function ls(wow, args, options) {
 
 function blame(wow, args, options) {
   if (args.length != 1) {
-    return handleCliError();
+    return handleCliError(wow);
   }
   wow.blame(args[0], function(err, addons) {
     if (err) {
@@ -366,9 +361,37 @@ function blame(wow, args, options) {
 }
 
 function version(wow, args, options) {
-  console.log('v%s', wow.version());
+  console.log(`v${wow.version()}`);
 }
 
+function bettterHelp(wow) {
+  console.log('wow: World Of Warcraft Addon Manager v%s', wow.version());
+  console.log('     Completely unassociated with Blizzard');
+  console.log('   ');
+  console.log('    platforms: List available addon platforms');
+  console.log('  Installing:');
+  console.log('    install <addon>: Install an addon');
+  console.log('        -p --platform Select the platform of the addon. Defaults to `curse`');
+  console.log('        -v --version Install a specific version of the addon.');
+  // console.log('           --cache <true/false> Enable or disable the cache. Defaults to true');
+  console.log('    checkupdate [addon]: Check if there\'s an update to all addons, or just one');
+  console.log('    update [addon]: Updates all addons, or the addon in the first argument.');
+  // console.log('        -c --concur How many downloads to run when updating all the addons.');
+  // console.log('                    Default: 1. Recommended: 1-4.');
+  console.log('    uninstall <addon>: Uninstall a previously installed addon');
+  console.log('  Managing:');
+  console.log('    installed: List installed addons');
+  console.log('    ls, folders: List addons and their folders');
+  console.log('    blame <folder>: Figure out which addon an addon folder is from');
+  console.log('  Internals/Automation:');
+  console.log('    Do note that many of these will supress all output except for the requested output');
+  // console.log('    dlurl <addon>: Get a download URL.');
+  // console.log('        -s --source Addon source, see above');
+  // console.log('        -v --version Addon version, see above');
+  console.log('    ');
+  console.log('    wow-cli is licensed under the MIT license');
+  console.log('    https://github.com/zekesonxx/wow-cli');
+}
 
 
 

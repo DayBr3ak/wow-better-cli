@@ -5,19 +5,14 @@
   "main": "lib/index.js",
   "dependencies": {
     "archy": "^1.0.0",
-    "async": "^0.9.0",
     "cheerio": "^0.20.0",
     "cli": "^0.11.2",
-    "debug": "^2.0.0",
     "decompress-zip": "^0.3.0",
-    "minimist": "^1.1.0",
     "mkdirp": "^0.5.1",
     "npmlog": "^4.0.0",
-    "q": "^1.4.1",
     "request": "^2.73.0",
     "rimraf": "^2.2.8",
-    "temp": "^0.8.3",
-    "wow-toc": "^0.1.0"
+    "temp": "^0.8.3"
   },
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha ./tests/test"
