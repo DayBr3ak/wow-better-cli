@@ -39,7 +39,7 @@ const commands = {
   remove: uninstall,
   installed: listInstalledAddons,
   checkupdate: checkupdate,
-
+  update: update,
 }
 
 
@@ -270,6 +270,44 @@ function checkupdate(wow, args, options) {
   })
 }
 
+function update(wow, args, options) {
+  if (args.length == 1) {
+    // one addon
+    let addonName = args[0];
+    wow.update(addonName, (err, hasUpdate) => {
+      if (err) {
+        return cliErrhandler(err);
+      }
+      if (!hasUpdate) {
+        console.log('No update available for ' + addonName);
+      } else {
+        console.log('succesfully updated ' + addonName)
+      }
+    })
+    return;
+  }
+
+  wow.getConfigData((err, data) => {
+    if (err) {
+      return cliErrhandler(err);
+    }
+    if (data && data.addons) {
+      Object.keys(data.addons).forEach(function(addonName) {
+        wow.update(addonName, (err, hasUpdate) => {
+          if (err) {
+            cliErrhandler(err);
+          }
+
+          if (!hasUpdate) {
+            // console.log('No update available for ' + addonName);
+          } else {
+            console.log('succesfully updated ' + addonName)
+          }
+        })
+      });
+    }
+  })
+}
 
 
 
