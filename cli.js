@@ -14,7 +14,6 @@ const Save = require('./lib/save.js');
 const Wow = require('./lib/wow.js');
 const util = require('./lib/util.js');
 
-
 log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
 const DEFAULT_PLATFORM = 'curse';
 
@@ -49,8 +48,13 @@ const commands = {
 
 
 cli.main(function (args, options) {
-    console.log(args)
-    console.log(options)
+    if (options && options.debug) {
+      console.log(args)
+      console.log(options)
+      log.level = 'info'
+    } else {
+      log.level = 'error';
+    }
     findWowDir(options, (err, wow) => {
       let commandHandler = commands[cli.command];
       commandHandler(wow, args, options);
@@ -270,6 +274,9 @@ function checkupdate(wow, args, options) {
       return cliErrhandler(err);
     }
     let num = updatesAvailable.length
+    if (num == 0) {
+      return console.log('Nothing to update');
+    }
     console.log('%s addon%s updates: %s', num, (num !== 1 ? 's have' : ' has'), updatesAvailable.join(', '));
 
   })
