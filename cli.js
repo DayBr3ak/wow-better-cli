@@ -22,11 +22,6 @@ if (true) {
   parseOptions.debug = ['d', 'Debug flag', true, false];
 }
 
-cli.parse(
-    parseOptions,
-    ['install', 'update', 'checkupdate', 'uninstall', 'remove', 'installed', 'platforms', 'ls', 'folders', 'changewow', 'blame', 'version']
-);
-
 const commands = {
   install: install,
   changewow: changewow,
@@ -40,8 +35,13 @@ const commands = {
   platforms: platforms,
   blame: blame,
   version: version,
+  reinstall,
 }
 
+cli.parse(
+    parseOptions,
+    Object.keys(commands)
+);
 
 cli.main(function (args, options) {
     if (options && options.debug) {
@@ -59,9 +59,9 @@ cli.main(function (args, options) {
 
 function cliErrhandler(err) {
   if (err.code == "EPERM") {
-    return log.error('info', "Please run this program as Administrator, your wow folder is in a protected directory");
+    return cli.error("Please run this program as Administrator, your wow folder is in a protected directory");
   }
-  log.error('error', err);
+  cli.error(err);
 }
 
 function promptWowDir(configFile, data, cb) {
@@ -151,23 +151,27 @@ function install(wow, args, options) {
     log.cli('error', 'Should specify addon as argument')
     return
   }
-
-  let addonName = args[0];
+  let addons = args;
   let platform = options.platform;
   let version = options.version ? options.version : null;
 
-  log.cli('install', `try to install ${addonName} with platform ${platform} and version ${version}`);
-  if (!wow.isPlatformValid(platform)) {
-    // error message
-    log.cli('error', `platform ${platform} is invalid, platform is set to default '${DEFAULT_PLATFORM}'`);
-    platform = DEFAULT_PLATFORM;
-  }
-
-  wow.install(platform, addonName, version, (err) => {
-    if (err) {
-        cliErrhandler(err);
+  addons.forEach((addonName) => {
+    log.cli('install', `try to install ${addonName} with platform ${platform} and version ${version}`);
+    if (!wow.isPlatformValid(platform)) {
+      // error message
+      log.cli('error', `platform ${platform} is invalid, platform is set to default '${DEFAULT_PLATFORM}'`);
+      platform = DEFAULT_PLATFORM;
     }
-  })
+
+    wow.install(platform, addonName, version, (err) => {
+      if (err) {
+        return cliErrhandler(err);
+      }
+
+      cli.ok('Installed ' + addonName);
+    })
+
+  });
 }
 
 function changewow(wow, args, options) {
@@ -218,7 +222,7 @@ function uninstall(wow, args, options) {
   let addonName = args[0];
   wow.uninstall(addonName, (err) => {
     if (err && err == 'not found') {
-      return log.error(`${addonName} not found`);
+      return cli.error(`${addonName} not found`);
     }
     if (err) {
       return cliErrhandler(err);
@@ -364,6 +368,27 @@ function version(wow, args, options) {
   console.log(`v${wow.version()}`);
 }
 
+function reinstall(wow, args, options) {
+  wow.getConfigData((err, data) => {
+    if (err) {
+      return cliErrhandler(err);
+    }
+    if (!data || !data.addons || Object.keys(data.addons).length == 0) {
+      return console.log('Nothing to reinstall');
+    }
+    Object.keys(data.addons).forEach((addonName) => {
+      let platform = data.addons[addonName].platform;
+      let version = data.addons[addonName].version;
+      wow.install(platform, addonName, version, (err) => {
+        if (err) {
+          return cliErrhandler(err);
+        }
+        cli.ok('Reinstalled ' + addonName);
+      })
+    })
+  })
+}
+
 function bettterHelp(wow) {
   console.log('wow: World Of Warcraft Addon Manager v%s', wow.version());
   console.log('     Completely unassociated with Blizzard');
@@ -379,6 +404,7 @@ function bettterHelp(wow) {
   // console.log('        -c --concur How many downloads to run when updating all the addons.');
   // console.log('                    Default: 1. Recommended: 1-4.');
   console.log('    uninstall <addon>: Uninstall a previously installed addon');
+  console.log('    reinstall: Forcefully reinstall all addons saved in the config file');
   console.log('  Managing:');
   console.log('    installed: List installed addons');
   console.log('    ls, folders: List addons and their folders');
@@ -392,12 +418,5 @@ function bettterHelp(wow) {
   console.log('    wow-cli is licensed under the MIT license');
   console.log('    https://github.com/zekesonxx/wow-cli');
 }
-
-
-
-
-
-
-
 
 
