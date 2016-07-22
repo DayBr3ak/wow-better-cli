@@ -8,6 +8,7 @@
 const log = require('npmlog');
 const path = require('path');
 const cli = require('cli');
+const archy = require('archy');
 
 const Save = require('./lib/save.js');
 const Wow = require('./lib/wow.js');
@@ -28,18 +29,22 @@ if (true) {
 
 cli.parse(
     parseOptions,
-    ['install', 'update', 'checkupdate', 'uninstall', 'remove', 'installed', 'ls', 'changewow']
+    ['install', 'update', 'checkupdate', 'uninstall', 'remove', 'installed', 'platforms', 'ls', 'folders', 'changewow', 'blame', 'version']
 );
 
 const commands = {
   install: install,
   changewow: changewow,
-  ls: null,
+  ls: ls,
+  folders: ls,
   uninstall: uninstall,
   remove: uninstall,
   installed: listInstalledAddons,
   checkupdate: checkupdate,
   update: update,
+  platforms: platforms,
+  blame: blame,
+  version: version,
 }
 
 
@@ -309,10 +314,53 @@ function update(wow, args, options) {
   })
 }
 
+function platforms(wow, args, options) {
+  console.log('Available Platforms: %s', wow.platforms().join(', '));
+}
 
 
+function ls(wow, args, options) {
+  wow.getConfigData((err, data) => {
+    if (err) {
+      return cliErrhandler(err);
+    }
+    if (!data || !data.addons) {
+      return console.log('config file is empty');
+    }
+    let folders = [];
+    Object.keys(data.addons).forEach(function(addon) {
+      var addondata = data.addons[addon];
+      folders.push({
+        label: `[${addondata.platform}:${addon} r${addondata.version}]`,
+        nodes: addondata.folders.sort()
+      });
+    });
+    folders.sort();
+    console.log(archy({
+      label: wow.getAddonsDir(),
+      nodes: folders
+    }));
+  })
+}
 
+function blame(wow, args, options) {
+  if (args.length != 1) {
+    return handleCliError();
+  }
+  wow.blame(args[0], function(err, addons) {
+    if (err) {
+      return cliErrhandler(err);
+    }
+    if (addons.length == 0) {
+      return console.log('Unknown folder ' + args[0]);
+    }
+    console.log('Folder %s is from %s', args[0], addons.join(', '));
+  });
+}
 
+function version(wow, args, options) {
+  console.log('v%s', wow.version());
+}
 
 
 
