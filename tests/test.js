@@ -126,7 +126,7 @@ describe('Curse', function() {
                 }
                 wow.saveFd.write(mockAddonData, (err) => {
                     should.not.exist(err);
-                    wow.checkAllAddonsForUpdate([], (err, addonsToUpdate) => {
+                    wow.checkAllAddonsForUpdate((err, addonsToUpdate) => {
                         should.not.exist(err);
                         addonsToUpdate.length.should.equal(2);
                         done();

@@ -28,13 +28,18 @@ if (true) {
 
 cli.parse(
     parseOptions,
-    ['install', 'update', 'checkupdate', 'uninstall', 'installed', 'ls', 'changewow']
+    ['install', 'update', 'checkupdate', 'uninstall', 'remove', 'installed', 'ls', 'changewow']
 );
 
 const commands = {
   install: install,
   changewow: changewow,
-  ls: ls,
+  ls: null,
+  uninstall: uninstall,
+  remove: uninstall,
+  installed: listInstalledAddons,
+  checkupdate: checkupdate,
+
 }
 
 
@@ -128,12 +133,16 @@ function findWowDir(options, cb) {
   })
 }
 
+function handleCliError() {
+
+}
 
 function install(wow, args, options) {
   log.cli('install', 'install cmd')
 
   if (args.length < 1) {
     // error message
+    handleCliError();
     log.cli('error', 'Should specify addon as argument')
     return
   }
@@ -190,3 +199,89 @@ function testls(wow, args, options) {
     console.log(projectName);
   })
 }
+
+function uninstall(wow, args, options) {
+  log.cli('uninstall', 'uninstall cmd')
+
+  if (args.length < 1) {
+    // error message
+    handleCliError();
+    // log.cli('error', 'Should specify addon as argument')
+    return
+  }
+
+  let addonName = args[0];
+  wow.uninstall(addonName, (err) => {
+    if (err && err == 'not found') {
+      return log.error(`${addonName} not found`);
+    }
+    if (err) {
+      return cliErrhandler(err);
+    }
+    log.info(`${addonName} uninstalled succesfully`);
+  });
+}
+
+function listInstalledAddons(wow, args, options) {
+  log.cli('listInstalledAddons');
+  wow.getConfigData((err, data) => {
+    if (err) {
+      return cliErrhandler(err);
+    }
+
+    if (data && data.addons) {
+      let names = Object.keys(data.addons);
+      console.log(names.length + ' addon' + (names.length !== 1 ? 's' : '') + ' installed');
+      names.forEach(function(addon) {
+        console.log('- '+addon);
+      });
+    }
+  })
+}
+
+function checkupdate(wow, args, options) {
+  log.cli('checkupdate');
+
+  if (args.length > 1) {
+    return handleCliError();
+  }
+  if (args.length == 1) {
+    let addonName = args[0];
+
+    return wow.checkupdate(addonName, (err, hasUpdate, platform, zipUrl, version) => {
+      if (err) {
+        return cliErrhandler(err);
+      }
+      if (hasUpdate) {
+         console.log('Update Available! Install using $ wow install %s', addonName);
+      } else {
+        console.log('No updated version found');
+      }
+    })
+  }
+
+  wow.checkAllAddonsForUpdate((err, updatesAvailable) => {
+    if (err) {
+      return cliErrhandler(err);
+    }
+    let num = updatesAvailable.length
+    console.log('%s addon%s updates: %s', num, (num !== 1 ? 's have' : ' has'), updatesAvailable.join(', '));
+
+  })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
