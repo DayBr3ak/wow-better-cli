@@ -22,15 +22,6 @@ const makeTmpWowFolder = util.makeTmpWowFolder;
 
 const testTimeout = 30*1000;
 
-// describe('Tukui', function() {
-//     describe('install', function() {
-//         it('should download tukui project', function(done) {
-//             this.timeout(testTimeout);
-//             makeTmpWowFolder
-//         })
-//     })
-// })
-
 describe('Util', function() {
     describe('parsePlatform', function() {
         it('should return tukui:128', function() {
@@ -41,22 +32,22 @@ describe('Util', function() {
 
         it('should return tukui', () => {
             let result = util.parsePlatform('tukui:tukui');
-            result.platform.should.equal('tukui');
-            result.addon.should.equal('tukui');
+            result.platform.should.equal('git');
+            // result.addon.should.equal('tukui');
 
             result = util.parsePlatform('tukui');
-            result.platform.should.equal('tukui');
-            result.addon.should.equal('tukui');
+            result.platform.should.equal('git');
+            // result.addon.should.equal('tukui');
         })
 
         it('should return elvui', () => {
             let result = util.parsePlatform('tukui:elvui');
-            result.platform.should.equal('tukui');
-            result.addon.should.equal('elvui');
+            result.platform.should.equal('git');
+            // result.addon.should.equal('elvui');
 
             result = util.parsePlatform('elvui');
-            result.platform.should.equal('tukui');
-            result.addon.should.equal('elvui');
+            result.platform.should.equal('git');
+            // result.addon.should.equal('elvui');
         })
 
         it('should return HardYards-22379', function() {
