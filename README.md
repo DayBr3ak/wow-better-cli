@@ -9,7 +9,7 @@ I don't play WoW anymore, but this thing still works fine.
 ```text
 $ npm install -g wow-better-cli
 ```
-wow-better-cli is, as the name implies, a CLI tool. The tool will keep track of your installed addons in a .addons.json file in your WoW install folder. The tool works on all platforms. If you're not on Windows or installed WoW in a different place than `C:/Program Files (x86)/World Of Warcaft`, specify the `WOWPATH` environment variable to tell the tool where to work.
+wow-better-cli is, as the name implies, a CLI tool. The tool will keep track of your installed addons in a addons.json file in your AppData folder. The tool works on all platforms. The tool will ask you on first use to enter the directory of your wow installation. If it is in a protected directory (like in Program Files) run it as Administrator.
 
 ## Features
 Implemented:
@@ -19,6 +19,8 @@ Implemented:
 * List installed addons
 * Cache of addon zip files for reinstalling and the like
 * Folder blame
+* Change wow directory
+* Reinstall all addons in the addons.json
 
 Planned (in no particular order):
 * Install addons from git/svn/hg repos
