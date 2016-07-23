@@ -67,6 +67,7 @@ function cliErrhandler(err) {
     return cli.error("Please run this program as Administrator, your wow folder is in a protected directory");
   }
   cli.error(err);
+  log.error('cli', err);
 }
 
 function promptWowDir(configFile, data, cb) {
@@ -161,12 +162,12 @@ function install(wow, args, options) {
   let version = options.version ? options.version : null;
 
   addons.forEach((addonName) => {
-    log.cli('install', `try to install ${addonName} with platform ${platform} and version ${version}`);
-    if (!wow.isPlatformValid(platform)) {
-      // error message
-      log.cli('error', `platform ${platform} is invalid, platform is set to default '${DEFAULT_PLATFORM}'`);
-      platform = DEFAULT_PLATFORM;
-    }
+    // log.cli('install', `try to install ${addonName} with platform ${platform} and version ${version}`);
+    // if (!wow.isPlatformValid(platform)) {
+    //   // error message
+    //   log.cli('error', `platform ${platform} is invalid, platform is set to default '${DEFAULT_PLATFORM}'`);
+    //   platform = DEFAULT_PLATFORM;
+    // }
 
     wow.install(addonName, version, (err) => {
       if (err) {

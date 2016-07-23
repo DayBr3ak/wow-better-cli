@@ -71,6 +71,16 @@ describe('Util', function() {
             check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards'))
             check(util.parsePlatform('wowinterface:HardYards-22379'))
         })
+
+        it('should return a git url', () => {
+            let check = (result, url) => {
+                result.platform.should.equal('git');
+                result.addon.should.equal(url);
+            }
+
+            let url = 'http://git.tukui.org/Azilroka/addonskins.git'
+            check(util.parsePlatform(url), url);
+        })
     })
 })
 
