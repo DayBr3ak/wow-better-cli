@@ -1,5 +1,5 @@
 {
-  "name": "wow-cli",
+  "name": "wow-better-cli",
   "version": "0.0.5",
   "description": "World Of Warcraft addon downloader and manager",
   "main": "lib/index.js",
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/zekesonxx/wow-cli.git"
+    "url": "https://github.com/DayBr3ak/wow-better-cli.git"
   },
   "keywords": [
     "wow",
@@ -34,9 +34,9 @@
   "author": "Zeke Sonxx <github.com/zekesonxx>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/zekesonxx/wow-cli/issues"
+    "url": "https://github.com/DayBr3ak/wow-better-cli/issues"
   },
-  "homepage": "https://github.com/zekesonxx/wow-cli",
+  "homepage": "https://github.com/DayBr3ak/wow-better-cli",
   "devDependencies": {
     "chai": "^3.5.0",
     "mocha": "^2.5.3"

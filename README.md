@@ -1,13 +1,15 @@
-# wow-cli
+# wow-better-cli
+This is a fork from zekesonxx wow-cli project. The project is unmaintened so I took over.
+
 This is a World of Warcraft addon downloader, installer, uninstaller, and manager.
 
 I don't play WoW anymore, but this thing still works fine.
 
 ## Installation
 ```text
-$ npm install -g wow-cli
+$ npm install -g wow-better-cli
 ```
-wow-cli is, as the name implies, a CLI tool. The tool will keep track of your installed addons in a .addons.json file in your WoW install folder. The tool works on all platforms. If you're not on Windows or installed WoW in a different place than `C:/Program Files (x86)/World Of Warcaft`, specify the `WOWPATH` environment variable to tell the tool where to work.
+wow-better-cli is, as the name implies, a CLI tool. The tool will keep track of your installed addons in a .addons.json file in your WoW install folder. The tool works on all platforms. If you're not on Windows or installed WoW in a different place than `C:/Program Files (x86)/World Of Warcaft`, specify the `WOWPATH` environment variable to tell the tool where to work.
 
 ## Features
 Implemented:
