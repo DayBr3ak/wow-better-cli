@@ -13,15 +13,14 @@ const IsNumeric = (n) => {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-const curse = require('../lib/curse.js');
-const downloader = require('../lib/downloader.js');
-const Wow = require('../lib/wow.js');
+const downloader = require('../lib/downloader');
+const curse = downloader.platforms.curse;
 
+const Wow = require('../lib/wow.js');
 const util = require('../lib/util.js');
+const makeTmpWowFolder = util.makeTmpWowFolder;
 
 const testTimeout = 30*1000;
-
-const makeTmpWowFolder = util.makeTmpWowFolder;
 
 // describe('Tukui', function() {
 //     describe('install', function() {
