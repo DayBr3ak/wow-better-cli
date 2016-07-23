@@ -70,6 +70,7 @@ describe('Util', function() {
             check(util.parsePlatform('http://wowinterface.com/downloads/info22379-HardYards.html'))
             check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards.html'))
             check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards'))
+            check(util.parsePlatform('wowinterface:HardYards-22379'))
         })
     })
 })
