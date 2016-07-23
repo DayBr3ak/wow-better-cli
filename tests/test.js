@@ -17,11 +17,62 @@ const curse = require('../lib/curse.js');
 const downloader = require('../lib/downloader.js');
 const Wow = require('../lib/wow.js');
 
-const utils = require('../lib/util.js');
+const util = require('../lib/util.js');
 
 const testTimeout = 30*1000;
 
-const makeTmpWowFolder = utils.makeTmpWowFolder;
+const makeTmpWowFolder = util.makeTmpWowFolder;
+
+// describe('Tukui', function() {
+//     describe('install', function() {
+//         it('should download tukui project', function(done) {
+//             this.timeout(testTimeout);
+//             makeTmpWowFolder
+//         })
+//     })
+// })
+
+describe('Util', function() {
+    describe('parsePlatform', function() {
+        it('should return tukui:128', function() {
+            let result = util.parsePlatform('tukui:128');
+            result.platform.should.equal('tukui');
+            result.addon.should.equal('tukui:128');
+        })
+
+        it('should return tukui', () => {
+            let result = util.parsePlatform('tukui:tukui');
+            result.platform.should.equal('tukui');
+            result.addon.should.equal('tukui');
+
+            result = util.parsePlatform('tukui');
+            result.platform.should.equal('tukui');
+            result.addon.should.equal('tukui');
+        })
+
+        it('should return elvui', () => {
+            let result = util.parsePlatform('tukui:elvui');
+            result.platform.should.equal('tukui');
+            result.addon.should.equal('elvui');
+
+            result = util.parsePlatform('elvui');
+            result.platform.should.equal('tukui');
+            result.addon.should.equal('elvui');
+        })
+
+        it('should return HardYards-22379', function() {
+            let check = (result) => {
+                result.platform.should.equal('wowinterface');
+                result.addon.should.equal('wowinterface:HardYards-22379');
+            }
+            check(util.parsePlatform('http://www.wowinterface.com/downloads/info22379-HardYards.html'))
+            check(util.parsePlatform('www.wowinterface.com/downloads/info22379-HardYards.html'))
+            check(util.parsePlatform('http://wowinterface.com/downloads/info22379-HardYards.html'))
+            check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards.html'))
+            check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards'))
+        })
+    })
+})
 
 describe('Curse', function() {
     describe('getDownloadUrl()', function() {
@@ -164,7 +215,7 @@ describe('download wow addon into wow folder', function() {
                 should.exist(wowPath);
 
                 let wow = new Wow(wowPath, wowPath);
-                wow.install('curse', 'Ace3', null, (err) => {
+                wow.install('Ace3', null, (err) => {
                     should.not.exist(err);
                     fs.access(wow.getSaveFile(), fs.constants.R_OK | fs.constants.W_OK, (err) => {
                         should.not.exist(err);
@@ -189,7 +240,7 @@ describe('download wow addon into wow folder', function() {
 
             makeTmpWowFolder(function(err, wowPath) {
                 let wow = new Wow(wowPath, wowPath);
-                wow.install('curse', 'Ace3', null, (err) => {
+                wow.install('Ace3', null, (err) => {
                     fs.access(wow.getSaveFile(), fs.constants.R_OK | fs.constants.W_OK, (err) => {
                         should.not.exist(err);
                         deleteAddon(wow);
@@ -197,6 +248,41 @@ describe('download wow addon into wow folder', function() {
                 })
             })
         })
+
+        it('should install 3 addons and reinstall them', function(done) {
+            this.timeout(testTimeout * 2);
+            makeTmpWowFolder((err, wowPath) => {
+                let wow = new Wow(wowPath, wowPath);
+
+                let addons = ['ace3', 'tukui:128', 'http://www.wowinterface.com/downloads/info22379-HardYards.html'];
+                util.installAddonList(wow, addons, (err, results) => {
+                    should.not.exist(err);
+                    results.length.should.equal(3);
+
+                    wow.getConfigData((err, data) => {
+                        should.not.exist(err);
+                        should.exist(data);
+                        should.exist(data.addons);
+                        Object.keys(data.addons).length.should.equal(3);
+
+                        let addonsReinstall = [];
+                        Object.keys(data.addons).forEach((addonName) => {
+                            let version = data.addons[addonName].version;
+                            let p = {name: addonName, version: version};
+                            addonsReinstall.push(p);
+                        });
+
+                        addonsReinstall.length.should.equal(3);
+                        util.installAddonList(wow, addonsReinstall, (err, results) => {
+                            should.not.exist(err);
+                            results.length.should.equal(3);
+                            done();
+                        })
+                    })
+                })
+            })
+        })
     })
 })
+
 

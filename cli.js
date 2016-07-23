@@ -168,7 +168,7 @@ function install(wow, args, options) {
       platform = DEFAULT_PLATFORM;
     }
 
-    wow.install(platform, addonName, version, (err) => {
+    wow.install(addonName, version, (err) => {
       if (err) {
         return cliErrhandler(err);
       }
@@ -384,7 +384,7 @@ function reinstall(wow, args, options) {
     Object.keys(data.addons).forEach((addonName) => {
       let platform = data.addons[addonName].platform;
       let version = data.addons[addonName].version;
-      wow.install(platform, addonName, version, (err) => {
+      wow.install(addonName, version, (err) => {
         if (err) {
           return cliErrhandler(err);
         }
