@@ -1,4 +1,7 @@
 # wow-better-cli
+
+[![Dependency Status](https://david-dm.org/daybr3ak/wow-better-cli.svg)](https://david-dm.org/daybr3ak/wow-better-cli)
+
 This is a fork from zekesonxx wow-cli project. The project is unmaintened so I took over.
 
 This is a World of Warcraft addon downloader, installer, uninstaller, and manager.
