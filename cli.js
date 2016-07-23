@@ -161,23 +161,25 @@ function install(wow, args, options) {
   let platform = options.platform;
   let version = options.version ? options.version : null;
 
-  addons.forEach((addonName) => {
-    // log.cli('install', `try to install ${addonName} with platform ${platform} and version ${version}`);
-    // if (!wow.isPlatformValid(platform)) {
-    //   // error message
-    //   log.cli('error', `platform ${platform} is invalid, platform is set to default '${DEFAULT_PLATFORM}'`);
-    //   platform = DEFAULT_PLATFORM;
-    // }
-
-    wow.install(addonName, version, (err) => {
+  if (addons.length == 1) {
+    return wow.install(addons[0], version, (err) => {
       if (err) {
-        return cliErrhandler(err);
+        cli.error('Error with ' + addons[0]);
+        cliErrhandler(err);
       }
-
-      cli.ok('Installed ' + addonName);
     })
+  }
 
-  });
+  return util.installAddonList(wow, addons, (err, results) => {
+    if (err) {
+      cli.error('error in batch install');
+      return cliErrhandler(err);
+    }
+
+    results.forEach((res) => {
+      cli.ok('Installed ' + res);
+    })
+  })
 }
 
 function changewow(wow, args, options) {
@@ -382,14 +384,22 @@ function reinstall(wow, args, options) {
     if (!data || !data.addons || Object.keys(data.addons).length == 0) {
       return console.log('Nothing to reinstall');
     }
+    let addonReinstall = []
     Object.keys(data.addons).forEach((addonName) => {
-      let platform = data.addons[addonName].platform;
-      let version = data.addons[addonName].version;
-      wow.install(addonName, version, (err) => {
-        if (err) {
-          return cliErrhandler(err);
-        }
-        cli.ok('Reinstalled ' + addonName);
+      addonReinstall.push({
+        version: data.addons[addonName].version,
+        name: addonName
+      })
+    })
+
+    util.installAddonList(wow, addonReinstall, (err, results) => {
+      if (err) {
+        cli.error('Error in reinstall addons');
+        return cliErrhandler(err);
+      }
+
+      results.forEach((res) => {
+        cli.ok('Reinstalled ' + res);
       })
     })
   })
