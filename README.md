@@ -6,8 +6,6 @@ This is a fork from zekesonxx wow-cli project. The project is unmaintened so I t
 
 This is a World of Warcraft addon downloader, installer, uninstaller, and manager.
 
-I don't play WoW anymore, but this thing still works fine.
-
 ## Installation
 ```text
 $ npm install -g wow-better-cli
