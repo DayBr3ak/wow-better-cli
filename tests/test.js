@@ -256,31 +256,36 @@ describe('download wow addon into wow folder', function() {
                 let wow = new Wow(wowPath, wowPath);
 
                 let addons = ['ace3', 'tukui:128', 'http://www.wowinterface.com/downloads/info22379-HardYards.html'];
-                util.installAddonList(wow, addons, (err, results) => {
-                    should.not.exist(err);
-                    results.length.should.equal(3);
+                util.installAddonList(wow, addons)
+                    .then((results) => {
+                        results.length.should.equal(3);
 
-                    wow.getConfigData((err, data) => {
-                        should.not.exist(err);
-                        should.exist(data);
-                        should.exist(data.addons);
-                        Object.keys(data.addons).length.should.equal(3);
-
-                        let addonsReinstall = [];
-                        Object.keys(data.addons).forEach((addonName) => {
-                            let version = data.addons[addonName].version;
-                            let p = {name: addonName, version: version};
-                            addonsReinstall.push(p);
-                        });
-
-                        addonsReinstall.length.should.equal(3);
-                        util.installAddonList(wow, addonsReinstall, (err, results) => {
+                        wow.getConfigData((err, data) => {
                             should.not.exist(err);
-                            results.length.should.equal(3);
-                            done();
+                            should.exist(data);
+                            should.exist(data.addons);
+                            Object.keys(data.addons).length.should.equal(3);
+
+                            let addonsReinstall = [];
+                            Object.keys(data.addons).forEach((addonName) => {
+                                let version = data.addons[addonName].version;
+                                let p = {name: addonName, version: version};
+                                addonsReinstall.push(p);
+                            });
+
+                            addonsReinstall.length.should.equal(3);
+                            util.installAddonList(wow, addonsReinstall)
+                                .then((results) => {
+                                    results.length.should.equal(3);
+                                    done();
+                                }, (err) => {
+                                    should.not.exist(err);
+                                })
                         })
+                    }, (err) => {
+                        should.not.exist(err);
+                        done();
                     })
-                })
             })
         })
     })

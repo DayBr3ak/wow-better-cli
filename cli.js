@@ -68,6 +68,7 @@ function cliErrhandler(err) {
   }
   cli.error(err);
   log.error('cli', err);
+  process.exit(1);
 }
 
 function promptWowDir(configFile, data, cb) {
@@ -167,6 +168,7 @@ function install(wow, args, options) {
         cli.error('Error with ' + addons[0]);
         cliErrhandler(err);
       }
+      cli.ok('Installed ' + addons[0])
     })
   }
 
@@ -320,7 +322,7 @@ function update(wow, args, options) {
           if (!hasUpdate) {
             // console.log('No update available for ' + addonName);
           } else {
-            console.log('succesfully updated ' + addonName)
+            cli.ok('succesfully updated ' + addonName)
           }
         })
       });
@@ -373,7 +375,7 @@ function blame(wow, args, options) {
 }
 
 function version(wow, args, options) {
-  console.log(`v${wow.version()}`);
+  cli.ok(`v${wow.version()}`);
 }
 
 function reinstall(wow, args, options) {
@@ -382,7 +384,7 @@ function reinstall(wow, args, options) {
       return cliErrhandler(err);
     }
     if (!data || !data.addons || Object.keys(data.addons).length == 0) {
-      return console.log('Nothing to reinstall');
+      return cli.ok('Nothing to reinstall');
     }
     let addonReinstall = []
     Object.keys(data.addons).forEach((addonName) => {
@@ -392,16 +394,16 @@ function reinstall(wow, args, options) {
       })
     })
 
-    util.installAddonList(wow, addonReinstall, (err, results) => {
-      if (err) {
-        cli.error('Error in reinstall addons');
-        return cliErrhandler(err);
-      }
-
-      results.forEach((res) => {
-        cli.ok('Reinstalled ' + res);
+    util.installAddonList(wow, addonReinstall)
+      .then((results) => {
+        cli.ok(`Correctly reinstalled ${results.length} addons`);
+      }, (err) => {
+         cli.error('Error in reinstall addons');
+         return cliErrhandler(err);
+      }, (progress) => {
+        cli.ok('Reinstalled ' + progress);
       })
-    })
+
   })
 }
 
