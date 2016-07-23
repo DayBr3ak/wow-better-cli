@@ -11,15 +11,17 @@ const Wow = require('./lib/wow.js');
 const util = require('./lib/util.js');
 
 log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
-const DEFAULT_PLATFORM = 'curse';
 
+if (global.DEBUG === undefined) {
+  global.DEBUG = true;
+}
+
+const DEFAULT_PLATFORM = 'curse';
 let parseOptions = {
     platform: [ 'p', 'Select the platform of the addon.', 'string', DEFAULT_PLATFORM],          // -f, --file FILE   A file to process
     version: [ 'v', 'Install a specific version of the addon.', 'int', false],                 // -t, --time TIME   An access time
-}
+    verbose: [ 'd', 'Add logging information', true, false],
 
-if (true) {
-  parseOptions.debug = ['d', 'Debug flag', true, false];
 }
 
 const commands = {
@@ -44,13 +46,16 @@ cli.parse(
 );
 
 cli.main(function (args, options) {
-    if (options && options.debug == 'true') {
+    if (global.DEBUG) {
       console.log(args)
       console.log(options)
-      log.level = 'info'
+      log.level = 'debug'
+    } else if (options && options.verbose == 'true') {
+      log.level = 'info';
     } else {
       log.level = 'warn';
     }
+
     findWowDir(options, (err, wow) => {
       let commandHandler = commands[cli.command];
       commandHandler(wow, args, options);
@@ -111,7 +116,7 @@ function findWowDir(options, cb) {
   //Figure out the user's WoW install directory
   var wowdir;
 
-  if (options && options.debug == 'true') {
+  if (global.DEBUG) {
     return util.makeTmpWowFolder((err, tmpwowpath) => {
       if (err) {
         return cb(err)
