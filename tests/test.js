@@ -209,6 +209,44 @@ describe('downloader', function() {
 });
 
 describe('download wow addon into wow folder', function() {
+  describe('with tukui', function () {
+    it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
+      this.timeout(testTimeout);
+
+      try {
+        const wowPath = await makeTmpWowFolder();
+        should.exist(wowPath);
+        let wow = new Wow(wowPath, wowPath);
+        await wow.install('tukui:128', null);
+        const fileExist = await exists(wow.getSaveFile());
+        fileExist.should.equal(true);
+      } catch(err) {
+        log.error('test', err);
+        should.not.exist(err);
+      }
+
+    })
+  })
+
+  describe('with wowinterface', function () {
+    it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
+      this.timeout(testTimeout);
+
+      try {
+        const wowPath = await makeTmpWowFolder();
+        should.exist(wowPath);
+        let wow = new Wow(wowPath, wowPath);
+        await wow.install('http://www.wowinterface.com/downloads/info22379-HardYards.html', null);
+        const fileExist = await exists(wow.getSaveFile());
+        fileExist.should.equal(true);
+      } catch(err) {
+        log.error('test', err);
+        should.not.exist(err);
+      }
+
+    })
+  })
+
   describe('with curse', function () {
     it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
       this.timeout(testTimeout);
@@ -262,7 +300,7 @@ describe('download wow addon into wow folder', function() {
 
         let results = await wow.installAddonList(addons);
         results.length.should.equal(len);
-        const configData = await wow.getConfigData();
+        const data = await wow.getConfigData();
         should.exist(data);
         should.exist(data.addons);
         Object.keys(data.addons).length.should.equal(len);

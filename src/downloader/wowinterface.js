@@ -21,7 +21,7 @@ export class Wowinterface {
   }
 
   extractID(input) {
-    const result = wowinterface.idRegex.exec(input);
+    const result = this.idRegex.exec(input);
     //if result found && result is number
     if (result && result[1] && String(parseInt(result[1])) === result[1]) {
       return parseInt(result[1]);

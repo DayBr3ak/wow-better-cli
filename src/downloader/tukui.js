@@ -58,7 +58,7 @@ export class Tukui {
     const url = 'http://www.tukui.org/addons/index.php?act=view&id=' + addonId;
     log.http('GET', url);
     const [res, body] = await request({ url: url });
-    let version = scrapAddonVersion(body);
+    let version = this.scrapAddonVersion(body);
     log.info('addon version', version);
     return version;
   }
