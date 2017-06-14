@@ -2,7 +2,6 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const mkdirp = require('mkdirp');
 const temp = require('temp').track();
 
 const chai = require('chai');
@@ -13,11 +12,11 @@ const IsNumeric = (n) => {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-const downloader = require('../lib/downloader');
+const downloader = require('../dist/downloader');
 const curse = downloader.platforms.curse;
 
-const Wow = require('../lib/wow.js');
-const util = require('../lib/util.js');
+const Wow = require('../dist/wow.js');
+const util = require('../dist/utils/util.js');
 const makeTmpWowFolder = util.makeTmpWowFolder;
 
 const testTimeout = 30*1000;

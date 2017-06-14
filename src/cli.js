@@ -5,9 +5,9 @@ const path = require('path');
 const cli = require('cli');
 const archy = require('archy');
 
-const Save = require('./save.js');
-const Wow = require('./wow.js');
-const util = require('./util.js');
+import { Save } from './save';
+import { Wow } from './wow';
+import * as util from './utils/util';
 
 log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
 
@@ -20,7 +20,6 @@ let parseOptions = {
     platform: [ 'p', 'Select the platform of the addon.', 'string', DEFAULT_PLATFORM],          // -f, --file FILE   A file to process
     version: [ 'v', 'Install a specific version of the addon.', 'int', false],                 // -t, --time TIME   An access time
     verbose: [ 'd', 'Add logging information', true, false],
-
 }
 
 const commands = {

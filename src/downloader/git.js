@@ -12,7 +12,7 @@ const cheerio = require('cheerio');
 log.addLevel('git', 3000, { fg: 'yellow' });
 const loglvl = 'git'
 
-const util = require('../util');
+const util = require('../utils/util');
 
 function scrapAddonVersion (body) {
   let $ = cheerio.load(body);

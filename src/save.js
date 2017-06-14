@@ -1,8 +1,8 @@
 'use strict';
-const fs = require('fs');
 const path = require('path');
 const log = require('npmlog');
-const mkdirp = require('mkdirp');
+
+import { readFile, writeFile, mkdirp } from './utils/fileutil';
 
 log.addLevel('save', 3000, { fg: 'grey' });
 
@@ -10,108 +10,66 @@ log.addLevel('save', 3000, { fg: 'grey' });
 const userAppDataFolder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + 'Library/Preferences' : process.env.HOME)
 const appFolder = process.env.APPDATA ? "wowcli" : ".wowcli";
 
-
-let Save = function() {
-  let Save = function(pAppFolder) {
+export class Save {
+  constructor(pAppFolder) {
     this.folder = pAppFolder || path.join(userAppDataFolder, appFolder);
     this.path = path.join(this.folder, 'addons.config.json');
     this.cached = false;
     this.data = null;
   }
 
-  Save.prototype._write = function(data, cb) {
-    let self = this;
-    mkdirp(self.folder, (err) => {
-      if (err) {
-        return cb(err);
-      }
-      fs.writeFile(self.path, data, cb);
-    })
-  };
+  async _write(data) {
+    await mkdirp(this.folder)
+    await writeFile(this.path, data);
+  }
 
-  Save.prototype.write = function(data, cb) {
-    let self = this;
-    self.data = data
-    self.cached = true;
+  async write(data) {
     try {
-      let jdata = JSON.stringify(data, null, '  ');
-      self._write(jdata, (err) => {
-        if (err) {
-          self.data = null;
-          self.cached = false;
-          return cb(err);
-        }
-        log.save('write', self.path);
-        cb(null);
-      })
+      const jdata = JSON.stringify(data, null, '  ');
+      await self._write(jdata);
+      log.save('write', self.path);
+      this.data = data;
+      this.cached = true;
+      return true;
+    } catch (err) {
+      this.data = null;
+      this.cached = false;
+      throw err;
+    }
+  }
+
+  async read() {
+    if (this.cached && this.data) {
+      return this.data;
+    }
+
+    try  {
+      const data = await readFile(this.path);
+      log.save('read', this.path);
     } catch(err) {
-      cb(err)
+      log.save('read', `${this.path} file not found`);
+      return {
+        addons: {}
+      };
     }
-  };
 
-  Save.prototype.read = function(cb) {
-    let self = this;
-    if (self.cached && self.data) {
-      return cb(null, self.data);
-    }
-    fs.readFile(self.path, function(err, data) {
-      log.save('read', self.path);
-
-      if (!err) {
-        let d;
-        try {
-          d = JSON.parse(data);
-        } catch (e) {
-          return cb(e, null);
-        }
-
-        self.data = d;
-        self.cached = true;
-        cb(null, self.data);
-      } else {
-        log.save('read', `${self.path} file not found`);
-        cb(null, null);
-      }
-    });
-  };
-
-  Save.prototype.update = function(addonName, addonData, cb) {
-    log.save('update')
-    let self = this;
-    self.read((err, read_data) => {
-      if (err) {
-        return cb(err);
-      }
-      let _read_data = read_data;
-      if (!_read_data) {
-        _read_data = {};
-      }
-      if (!_read_data.addons) {
-        _read_data.addons = {};
-      }
-
-      _read_data.addons[addonName] = addonData;
-      self.write(_read_data, cb);
-    })
+    this.data = JSON.parse(data);
+    this.cached = true;
+    return this.data;
   }
 
-  Save.prototype.delete = function(addonName, cb) {
-    log.save('delete')
-    let self = this;
-    self.read((err, read_data) => {
-      if (err) {
-        return cb(err);
-      }
-      let _read_data = read_data;
-      if (!_read_data || !_read_data.addons) {
-        return cb('no file, nothing to delete')
-      }
-      delete _read_data.addons[addonName];
-      self.write(_read_data, cb)
-    })
+  async update(addonName, addonData) {
+    log.save('update');
+    let readData = await this.read();
+    readData.addons[addonName] = addonData;
+    await this.write(readData);
   }
 
-  return Save;
-};
+  async delete(addonName) {
+    log.save('delete');
+    let readData = await this.read();
+    delete readData.addons[addonName];
+    await this.write(readData);
+  }
 
-module.exports = Save();
+}

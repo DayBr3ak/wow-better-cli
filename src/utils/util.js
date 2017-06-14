@@ -1,90 +1,59 @@
 // util.js
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
-const mkdirp = require('mkdirp');
-const temp = require('temp');
 const log = require('npmlog');
-const q = require('q');
 
-const tocreader = require('./tocreader.js');
+const tocReader = require('./tocreader.js');
+import { mkTempDir, mkdirp, readDir, folderStat, copyFolder } from './fileutil';
 
-exports.makeTmpWowFolder = (cb) => {
-  temp.mkdir('wowfolder', function(err, wowFolder) {
-    if (err) {
-      return cb(err)
-    }
-
-    let interfaceDir = path.join(wowFolder, 'Interface')
-    mkdirp(interfaceDir, (err) => {
-      if (err) {
-        return cb(err)
-      }
-
-      let addonsDir = path.join(interfaceDir, 'AddOns')
-      mkdirp(addonsDir, (err) => {
-        if (err) {
-          return cb(err)
-        }
-        cb(null, wowFolder);
-      })
-    })
-  })
-};
-
-exports.listFolderContent = (folder, cb) => {
-  fs.readdir(folder, (err, list) => {
-    if (err) {
-      return cb(err);
-    }
-
-    list.forEach((entry) => {
-      let _path = path.join(folder, entry);
-      cb(null, _path);
-    })
-  })
+export async function makeTmpWowFolder() {
+  const wowFolder = await mkTempDir('wowfolder');
+  const interfaceDir = path.join(wowFolder, 'Interface');
+  await mkdirp(interfaceDir);
+  const addonsDir = path.join(interfaceDir, 'AddOns');
+  await mkdirp(addonsDir);
+  return wowFolder
 }
 
-exports.listAddonsInFolder = (folder, cb) => {
-  exports.listFolderContent(folder, (err, entryPath) => {
-    fs.stat(_path, (err, stat) => {
-      if (err) {
-        return cb(err);
-      }
-      // If the file is a directory
-      if (stat && stat.isDirectory())
-        cb(null, _path);
-    });
-  })
-};
+export async function listFolderContent(folder) {
+  const list = await readDir(folder);
+  return list.map((entry) => {
+    return path.join(folder, entry);
+  });
+}
 
-exports.getTocFileName = (pPath) => {
+export async function listAddonsInFolder(folder) {
+  const subFolders = await listFolderContent(folder);
+  const result = [];
+  for (let subFolder of subFolders) {
+    const st = await folderStat(subFolder); // could do that differently, right now it's not parralel
+    if (st && st.isDirectory()) {
+      result.push(subFolder);
+    }
+  }
+  return result;
+}
+
+export function getTocFileName(pPath) {
   let splited = pPath.split('\\'); // todo use plateform dependent split
   let addonFolderName = splited[splited.length - 1];
   let tocfilePath = path.join(pPath, addonFolderName + '.toc');
   return tocfilePath;
 }
 
-exports.listMyAddonsInFolder = (folder, cb) => {
-  exports.listAddonsInFolder(folder, (err, addonFolder) => {
-    if (err) {
-      return cb(err);
-    }
-    const reBlizAddon = /Blizzard_/
-    let isBlizAddon = reBlizAddon.exec(addonFolder) != null;
-    if (!isBlizAddon) {
-      cb(null, addonFolder);
-    }
-  })
+export async function listMyAddonsInFolder(folder) {
+  const list = await listAddonsInFolder(folder);
+  const reBlizAddonRegex = /Blizzard_/;
+
+  return list.filter((addonFolder) => {
+    reBlizAddonRegex.exec(addonFolder) === null;
+  });
 }
 
-exports.getUrlNameFromAddon = (addonPath, cb) => {
-  let toc = tocreader.parse(exports.getTocFileName(addonPath));
-  if (!toc) {
-    return null;
-  }
-  let key = 'X-Curse-Project-ID'
+export async function getUrlNameFromAddon(addonPath, cb) {
+  const toc = await tocReader.parse(getTocFileName(addonPath));
+  const key = 'X-Curse-Project-ID'
   return toc[key];
 }
 
@@ -101,7 +70,7 @@ const tukuiUI_git = {
   'elvui': 'http://git.tukui.org/Elv/elvui.git'
 }
 
-exports.parsePlatform = (addonName) => {
+export function parsePlatform(addonName) {
   let gitValid = gitRegex.exec(addonName);
   if (gitValid && gitValid[1]) {
     return  {
@@ -135,11 +104,11 @@ exports.parsePlatform = (addonName) => {
     }
   }
 
-  let wowinterfaceValidator = wowiRegex.exec(addonName);
+  const wowinterfaceValidator = wowiRegex.exec(addonName);
   //if result found && result is number
   if (wowinterfaceValidator && wowinterfaceValidator[1] && String(parseInt(wowinterfaceValidator[1])) === wowinterfaceValidator[1]) {
-    let id = parseInt(wowinterfaceValidator[1]);
-    let addon = wowinterfaceValidator[2];
+    const id = parseInt(wowinterfaceValidator[1]);
+    const addon = wowinterfaceValidator[2];
 
     return {
       platform: 'wowinterface',
@@ -153,7 +122,7 @@ exports.parsePlatform = (addonName) => {
   }
 }
 
-exports.getGitName = (url) => {
+export function getGitName(url) {
   let gitValid = gitRegex.exec(url);
   if (gitValid && gitValid[1]) {
     let tmp = gitValid[1].split('/');
@@ -162,7 +131,25 @@ exports.getGitName = (url) => {
   return null;
 }
 
-exports.installAddonList = (wow, addonList) => {
+export async function installAddonList(wow, addonList) {
+  let awaits = [];
+  for (let addonParams of addonList) {
+    let name, version;
+    if (addonParams.name) {
+      name = addonParams.name;
+      version = addonParams.version;
+    } else {
+      name = addonParams;
+      version = null;
+    }
+    log.info('installAddonList', `name: ${name}, version: ${version}`);
+    const promise = wow.install(name, version);
+    awaits.push(promise);
+  }
+  await Promise.all(awaits);
+}
+
+export function installAddonListOld(wow, addonList) {
   let mainDefer = q.defer();
 
   let eventuallyInstall = (addonParams) => {
@@ -198,10 +185,26 @@ exports.installAddonList = (wow, addonList) => {
   return mainDefer.promise;
 }
 
-const ncp = require('ncp')
-ncp.limit = 16;
+export async function copyFoldersTo(folders, dest) {
+  if (folders.length === 1) {
+    await copyFolder(folders[0], dest);
+    return;
+  }
 
-exports.copyFoldersTo = (folders, dest) => {
+  const awaits = [];
+  for (let folder of folders) {
+    let newFolder = folder.split('\\'); // TODO unix
+    newFolder = newFolder[newFolder.length - 1];
+    let newDest = path.join(dest, newFolder);
+    log.info('copyFoldersTo', 'copying ' + folder + ' to ' + newDest);
+    awaits.push(copyFolder(folder, newDest));
+  }
+  await Promise.all(awaits);
+
+}
+
+
+export function copyFoldersToOld(folders, dest) {
   let mainDefer = q.defer();
 
   if (folders.length == 1) {
