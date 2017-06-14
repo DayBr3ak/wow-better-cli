@@ -14,208 +14,189 @@ log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
 if (global.DEBUG === undefined) {
   global.DEBUG = true;
 }
-
 const DEFAULT_PLATFORM = 'curse';
+const DEFAULTS_WOWDIR = {
+  '1': path.join('C:', 'Program Files', 'World Of Warcraft'),
+  '2': path.join('C:', 'Program Files (x86)', 'World Of Warcraft'),
+  '3': path.join('C:', 'World Of Warcraft'),
+  '4': path.join('D:', 'World Of Warcraft')
+}
+
 let parseOptions = {
-    platform: [ 'p', 'Select the platform of the addon.', 'string', DEFAULT_PLATFORM],          // -f, --file FILE   A file to process
-    version: [ 'v', 'Install a specific version of the addon.', 'int', false],                 // -t, --time TIME   An access time
-    verbose: [ 'd', 'Add logging information', true, false],
+  platform: [ 'p', 'Select the platform of the addon.', 'string', DEFAULT_PLATFORM],          // -f, --file FILE   A file to process
+  version: [ 'v', 'Install a specific version of the addon.', 'int', false],                 // -t, --time TIME   An access time
+  verbose: [ 'd', 'Add logging information', true, false],
 }
 
-const commands = {
-  install: install,
-  changewow: changewow,
-  ls: ls,
-  folders: ls,
-  uninstall: uninstall,
-  remove: uninstall,
-  installed: listInstalledAddons,
-  checkupdate: checkupdate,
-  update: update,
-  platforms: platforms,
-  blame: blame,
-  version: version,
-  reinstall,
-}
+class CliManager {
+  constructor() {
+    this.commands = {};
+  }
 
-cli.parse(
-    parseOptions,
-    Object.keys(commands)
-);
+  async promptWowDir(configFile, data={}) {
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
 
-cli.main(function (args, options) {
-    if (global.DEBUG) {
-      console.log(args)
-      console.log(options)
-      log.level = 'debug'
-    } else if (options && options.verbose == 'true') {
-      log.level = 'info';
-    } else {
-      log.level = 'warn';
+    console.log('Where is your World of Warcraft folder ?');
+    for (let n of Object.keys(DEFAULTS_WOWDIR)) {
+      console.log(`  ${n}. ${DEFAULTS_WOWDIR[n]}`);
     }
+    console.log(`  ${DEFAULTS_WOWDIR.length}. Other`)
 
-    findWowDir(options, (err, wow) => {
-      let commandHandler = commands[cli.command];
-      commandHandler(wow, args, options);
+    const question = (questionString) => {
+      return new Promise((resolve) => {
+        rl.question(questionString, (answer) => {
+          resolve(answer);
+          rl.close();
+        });
+      });
+    };
+    // const question = (q) => return new Promise(r => rl.question(q, r));
+
+    const answer = await question('');
+    let wowdir = null;
+
+    if (parseInt(answer) >= DEFAULTS_WOWDIR.length) {
+      const askedPath = await question('Enter the path:\n');
+      log.cli('wowdir answer', 'should be in ' + askedPath);
+      wowdir = askedPath;
+    } else {
+      wowdir = DEFAULTS_WOWDIR[answer];
+    }
+    //   default: {
+    //     throw 'Wrong choice, please enter 1, 2 or 3';
+    //   }
+    // }
+
+    if (!wowdir) { // FIXME actually check if dir exists
+      throw 'error wrong directory specified'
+    }
+    data.wowdir = path.normalize(wowdir);
+    await configFile.write(data);
+    return wowdir;
+  }
+
+  async findWowDir(options) {
+    // Figure out the user's WoW install directory
+    let wowdir = null;
+    if (global.DEBUG) {
+      const tmpwowpath = await util.makeTmpWowFolder();
+      return new Wow(tmpwowpath, tmpwowpath);
+    }
+    const configFile = new Save();
+    const data = await configFile.read();
+    if (!data || !data.wowdir) {
+      // prompt user
+      log.cli('shouldprompt', 'hi');
+      wowdir = await this.promptWowDir(configFile, data);
+    } else {
+      wowdir = data.wowdir;
+    }
+    log.cli('wowDir', wowdir);
+    return new Wow(wowdir);
+  }
+
+  add(commandName, handler) {
+    this.commands[commandName] = handler;
+  }
+
+  getCommands() {
+    return Object.keys(this.commands);
+  }
+
+  setup() {
+    cli.parse(
+      parseOptions,
+      this.getCommands()
+    );
+
+    cli.main(async (args, options) => {
+      if (global.DEBUG) {
+        console.log(args)
+        console.log(options)
+        log.level = 'debug'
+      } else if (options && options.verbose == 'true') {
+        log.level = 'info';
+      } else {
+        log.level = 'warn';
+      }
+
+      try {
+        const wow = await this.findWowDir(options);
+        let commandHandler = this.commands[cli.command];
+        await commandHandler(wow, args, options);
+      } catch(err) {
+        cliErrhandler(err);
+      }
     })
-})
+  }
+}
 
 function cliErrhandler(err) {
-  if (err.code == "EPERM") {
+  if (err.code === "EPERM") {
     return cli.error("Please run this program as Administrator, your wow folder is in a protected directory");
+  }
+  if (err.code === "ARGS_ERROR") {
+    return cli.error('ArgsError: ' + err.message);
   }
   cli.error(err);
   log.error('cli', err);
   process.exit(1);
 }
 
-function promptWowDir(configFile, data, cb) {
-  const readline = require('readline');
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  const DEFAULTS_WOWDIR = {
-    '1': path.join('C:', 'Program Files', 'World Of Warcraft'),
-    '2': path.join('C:', 'Program Files (x86)', 'World Of Warcraft')
-  }
-
-  console.log('Where is your World of Warcraft folder ?')
-  console.log('  1. ' + DEFAULTS_WOWDIR['1'])
-  console.log('  2. ' + DEFAULTS_WOWDIR['2'])
-  console.log('  3. Other')
-
-  rl.question('', (answer) => {
-    if (answer === '3') {
-      rl.question('Enter the path pls\n', (answer) => {
-        log.cli('wowdir answer', 'should be in ' + answer);
-        handleAnswer(answer)
-        rl.close();
-      })
-    } else {
-      handleAnswer(DEFAULTS_WOWDIR[answer])
-      rl.close();
-    }
-  })
-
-  let handleAnswer = (presumedWowdir) => {
-    if (!presumedWowdir) {
-      return cliErrhandler('error wrong directory specified');
-    }
-    let newData = data || {};
-    newData.wowdir = path.normalize(presumedWowdir);
-    configFile.write(newData, (err) => {
-      return cb(newData)
-    })
-  }
-
-}
-
-function findWowDir(options, cb) {
-  //Figure out the user's WoW install directory
-  var wowdir;
-
-  if (global.DEBUG) {
-    return util.makeTmpWowFolder((err, tmpwowpath) => {
-      if (err) {
-        return cb(err)
-      }
-
-      return cb(null, new Wow(tmpwowpath, tmpwowpath));
-    })
-  }
-
-  let wowFoundCallback = (data) => {
-    log.cli('wowDir', data.wowdir);
-    cb(null, new Wow(data.wowdir));
-  }
-
-  let configFile = new Save();
-  configFile.read((err, data) => {
-    if (!data || !data.wowdir) {
-      // prompt user
-      log.cli('shouldprompt', 'hi');
-      promptWowDir(configFile, data, wowFoundCallback);
-    } else {
-      return wowFoundCallback(data);
-    }
-  })
-}
-
 function handleCliError(wow) {
   betterHelp(wow);
 }
 
-function install(wow, args, options) {
+const manager = new CliManager();
+manager.add('install', async (wow, args, options) => {
   log.cli('install', 'install cmd')
-
   if (args.length < 1) {
-    // error message
-    handleCliError(wow);
-    log.cli('error', 'Should specify addon as argument')
-    return
+    throw {code: 'ARGS_ERROR', message: 'need at least one addon to install'};
   }
-  let addons = args;
-  let platform = options.platform;
-  let version = options.version ? options.version : null;
-
-  if (addons.length == 1) {
-    return wow.install(addons[0], version, (err) => {
-      if (err) {
-        cli.error('Error with ' + addons[0]);
-        cliErrhandler(err);
-      }
-      cli.ok('Installed ' + addons[0])
-    })
+  const addons = args;
+  const platform = options.platform;
+  const version = options.version ? options.version : null;
+  try {
+    const results = await util.installAddonList(wow, addons);
+    for (let r of results) {
+      cli.ok('Installed ' + r);
+    }
+  } catch(err) {
+    throw 'error in batch install';
   }
+});
 
-  return util.installAddonList(wow, addons, (err, results) => {
-    if (err) {
-      cli.error('error in batch install');
-      return cliErrhandler(err);
-    }
+manager.add('changewow', async (wow, args, options) => {
+  const data = await wow.saveFd.read();
+  delete data.wowdir;
+  if (args.length < 1) {
+    const newWowdir = await manager.promptWowDir(wow.saveFd, data);
+    log.cli('changewowdir', 'new dir is ' + newWowdir);
+  } else if (args.length === 1) {
+    // user specified wowdir in the commandline
+    data.wowdir = args[0];
+    await wow.saveFd.write(data);
+    log.cli('changewowdir', 'new dir is ' + data.wowdir);
+  } else {
+    throw {code: 'ARGS_ERROR', message: 'Only 0 or 1 arguments'};
+  }
+});
 
-    results.forEach((res) => {
-      cli.ok('Installed ' + res);
-    })
-  })
-}
-
-function changewow(wow, args, options) {
-  wow.saveFd.read((err, data) => {
-    if (err) {
-      return cliErrhandler(err);
-    }
-    data.wowdir = undefined;
-
-    if (args < 1) {
-      promptWowDir(wow.saveFd, data, (data) => {
-        log.cli('changewowdir', 'new dir is ' + data.wowdir)
-      })
-    } else {
-      // user specified wowdir in the commandline
-      data.wowdir = args[0];
-      wow.saveFd.write(data, (err) => {
-        log.cli('changewowdir', 'new dir is ' + data.wowdir)
-      })
-    }
-  })
-}
-
-function testls(wow, args, options) {
+manager.add('testls', async (wow, args, options) => {
   log.cli('LS')
   let addonDir = path.join(wow.wowpath, 'Interface', 'AddOns');
   let stop = false;
-  util.listMyAddonsInFolder(addonDir, (err, addonFolder) => {
-    if (stop) {
-      return
-    }
-    // stop = true;
-    let projectName = util.getUrlNameFromAddon(addonFolder);
-    console.log(projectName);
-  })
-}
+  const myAddons = await util.listMyAddonsInFolder(addonDir);
+  log.cli('myAddons', myAddons);
+  for (let addon of myAddons) {
+    let projectName = await util.getUrlNameFromAddon(addon);
+    log.cli(projectName);
+  }
+});
 
 function uninstall(wow, args, options) {
   log.cli('uninstall', 'uninstall cmd')
@@ -435,4 +416,4 @@ function betterHelp(wow) {
   console.log('    https://github.com/zekesonxx/wow-cli');
 }
 
-
+manager.setup();

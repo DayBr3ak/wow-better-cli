@@ -22,7 +22,7 @@ export class Wow  {
   }
 
   getSaveFile() {
-      return this.saveFd.path;
+    return this.saveFd.path;
   }
 
   getVersion() {
@@ -180,6 +180,29 @@ export class Wow  {
     }
     log.info('allupdate', "updates: " + updates.length)
     return updates;
+  }
+
+  async installAddonList(addonList) {
+    const results = [];
+    for (let addonParams of addonList) {
+      let name, version;
+      if (addonParams.name) {
+        name = addonParams.name;
+        version = addonParams.version;
+      } else {
+        name = addonParams;
+        version = null;
+      }
+      log.info('installAddonList', `name: ${name}, version: ${version}`);
+
+      try {
+        await this.install(name, version);
+        results.push([name, version]);
+      } catch(err) {
+        log.info(`Could not install (name: ${name}, version: ${version})`);
+      }
+    }
+    return results;
   }
 
 }

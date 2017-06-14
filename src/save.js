@@ -26,8 +26,8 @@ export class Save {
   async write(data) {
     try {
       const jdata = JSON.stringify(data, null, '  ');
-      await self._write(jdata);
-      log.save('write', self.path);
+      await this._write(jdata);
+      log.save('write', this.path);
       this.data = data;
       this.cached = true;
       return true;
@@ -46,16 +46,15 @@ export class Save {
     try  {
       const data = await readFile(this.path);
       log.save('read', this.path);
+      this.data = JSON.parse(data);
+      this.cached = true;
+      return this.data;
     } catch(err) {
       log.save('read', `${this.path} file not found`);
       return {
         addons: {}
       };
     }
-
-    this.data = JSON.parse(data);
-    this.cached = true;
-    return this.data;
   }
 
   async update(addonName, addonData) {

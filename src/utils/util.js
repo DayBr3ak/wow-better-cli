@@ -131,24 +131,6 @@ export function getGitName(url) {
   return null;
 }
 
-export async function installAddonList(wow, addonList) {
-  let awaits = [];
-  for (let addonParams of addonList) {
-    let name, version;
-    if (addonParams.name) {
-      name = addonParams.name;
-      version = addonParams.version;
-    } else {
-      name = addonParams;
-      version = null;
-    }
-    log.info('installAddonList', `name: ${name}, version: ${version}`);
-    const promise = wow.install(name, version);
-    awaits.push(promise);
-  }
-  await Promise.all(awaits);
-}
-
 export function installAddonListOld(wow, addonList) {
   let mainDefer = q.defer();
 

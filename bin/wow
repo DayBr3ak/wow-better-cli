@@ -2,5 +2,5 @@
 
 global.DEBUG = false;
 
-require('../src/cli.js');
+require('../dist/cli.js');
 

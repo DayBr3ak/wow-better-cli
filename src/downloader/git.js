@@ -1,157 +1,121 @@
-// git.js
-'use strict';
 
 const log = require('npmlog');
-const Git = require('nodegit');
-const temp = require('temp');
+
+
 const path = require('path');
-const fs = require('fs');
-const request = require('request');
 const cheerio = require('cheerio');
 
 log.addLevel('git', 3000, { fg: 'yellow' });
 const loglvl = 'git'
 
-const util = require('../utils/util');
+import { getGitName, copyFoldersTo } from '../utils/util';
+import { readDir, mkTempDir } from '../utils/fileutil';
+import { request } from '../utils/request';
 
-function scrapAddonVersion (body) {
-  let $ = cheerio.load(body);
-  let lastCommit = $('.last-commit').first();
-  let a = $('a', lastCommit);
-  let commit = a.attr('href').split('/')
-  commit = commit[commit.length - 1];
-  log.log(loglvl, commit);
-  return commit;
+let Git = null;
+try {
+  Git = require('nodegit');
+} catch(err) {
+  log.error('git', 'package nodegit is not available');
 }
 
-exports.getDownloadURL = function (slug, version, cb) {
-  const re = /git\.tukui\.org/;
-  if (re.exec(slug)) {
-    let url = slug.split('.git')[0] + '/tree/master';
-    log.http('GET', url);
-    return request.get(url, (err, res, body) => {
-      if (err) {
-        return cb(err);
-      }
-      try {
-        let version = scrapAddonVersion(body);
-        if (!version)
-          throw 'Version is null';
-        return cb(null, slug, version);
-      } catch (e) {
-        return cb(err)
-      }
-    })
-  } else {
-    temp.mkdir('git', (err, folder) => {
-      if (err) {
-        return cb(err);
-      }
+export class GitAddon {
+  constructor() {
 
-      Git.Clone(slug, folder)
-       .then((repo) => {
-          return repo.getMasterCommit();
-       })
-       .then((commit) => {
-          cb(null, slug, commit.sha());
-       })
-       .catch((err) => {
-          cb(err);
-       })
-    });
   }
-}
 
-exports.install = function(url, addonsDir, cb) {
-  let gitName = util.getGitName(url);
-  log.log(loglvl, 'git.install', 'git name: ' + gitName)
+  scrapAddonVersion(body) {
+    let $ = cheerio.load(body);
+    let lastCommit = $('.last-commit').first();
+    let a = $('a', lastCommit);
+    let commit = a.attr('href').split('/')
+    commit = commit[commit.length - 1];
+    log.log(loglvl, commit);
+    return commit;
+  }
 
-  let version = null;
-  let folders = null;
-  let tmpFolders = null;
-  let update = () => {
+  async getDownloadURL(slug, version) {
+    if (Git === null) {
+      throw "Can't use nodegit because binaries aren't available";
+    }
+    const re = /git\.tukui\.org/;
+    if (re.exec(slug)) {
+      const url = slug.split('.git')[0] + '/tree/master';
+      log.http('GET', url);
+      const [res, body] = await request({ url: url });
+      const version = this.scrapAddonVersion(body);
+      if (!version) {
+        throw 'git :: version scrapped is null';
+      }
+      return [slug, version];
+    } else {
+      const folder = await mkTempDir('git');
+      const repo = await Git.Clone(slug, folder);
+      const commit = await repo.getMasterCommit();
+      return [slug, commit.sha()];
+    }
+  }
+
+  async install(url, addonsDir) {
+    if (Git === null) {
+      throw "Can't use nodegit because binaries aren't available";
+    }
+    const gitName = getGitName(url);
+    log.log(loglvl, 'git.install', 'git name: ' + gitName);
+    const folder = await mkTempDir('git');
+    log.log(loglvl, 'git.install.0', 'begin clone ' + gitName + ' into tmp folder');
+    const repo = await Git.Clone(url, folder);
+    log.log(loglvl, 'git.install.1', 'cloned ' + gitName + ' into tmp folder');
+    const commit = await repo.getMasterCommit();
+    let version = commit.sha();
+    log.log(loglvl, 'git.install.2', 'cloned ' + gitName + ' into tmp folder');
+
+    let list = await readDir(folder);
+    log.log(loglvl, 'git.install', 'examining repo ' + gitName);
+    list = this.filterGit(list);
+
+    let foundToc = false;
+    const listPathJoined = [];
+    for (let entry of list) {
+      listPathJoined.push(path.join(folder, entry));
+      log.log(loglvl, 'entry', entry);
+      if (path.extname(entry) == '.toc') {
+        foundToc = true;
+        log.log(loglvl, 'tocfile found');
+      }
+    }
+
+    let dest;
+    if (foundToc) {
+      log.log(loglvl, 'git.install', 'copying root folder');
+      tmpFolders = [repoFolder];
+      dest = path.join(addonsDir, gitName);
+    } else {
+      tmpFolders = listPathJoined;
+      dest = addonsDir
+    }
+
+    await copyFoldersTo(tmpFolders, dest);
+    log.log(loglvl, 'git.install', 'tpmFolder: ' + tmpFolders.join(', '))
+    if (foundToc) {
+      folders = [gitName];
+    } else {
+      folders = this.filterGit(list);
+    }
+
     if (version && folders) {
-      cb(null, {
+      return {
         platform: 'git',
         version: version,
         folders: folders
-      })
+      }
     }
+
+    // return commit.getTree();
   }
 
-  let examineRepo = (repoFolder) => {
-    fs.readdir(repoFolder, (err, list) => {
-      log.log(loglvl, 'git.install', 'examining repo ' + gitName)
-      if (err) {
-        return cb(err);
-      }
-      let foundToc = false;
-      let listPathJoined = [];
-      list = filterGit(list);
-      list.forEach((entry) => {
-        listPathJoined.push(path.join(repoFolder, entry));
-        log.log(loglvl, 'entry', entry);
-        if (path.extname(entry) == '.toc') {
-          foundToc = true;
-          log.log(loglvl, 'tocfile found');
-        }
-      })
-      let dest;
-      if (foundToc) {
-        log.log(loglvl, 'git.install', 'copying root folder');
-        tmpFolders = [repoFolder];
-        dest = path.join(addonsDir, gitName);
-      } else {
-        tmpFolders = listPathJoined;
-        dest = addonsDir
-      }
-      // copy tmp folders to your actual addon directory
-      util.copyFoldersTo(tmpFolders, dest)
-        .then(() => {
-          log.log(loglvl, 'git.install', 'tpmFolder: ' + tmpFolders.join(', '))
-
-          if (foundToc) {
-            folders = [gitName]
-          } else {
-            folders = filterGit(list);
-          }
-          update();
-        }, (err) => {
-          cb(err);
-        });
-    })
+  filterGit(folderList) {
+    return folderList.filter(f => path.basename(f) !== '.git');
   }
-
-  temp.mkdir('git', (err, folder) => {
-    if (err) {
-      return cb(err);
-    }
-
-    log.log(loglvl, 'git.install.0', 'begin clone ' + gitName + ' into tmp folder')
-    Git.Clone(url, folder)
-     .then((repo) => {
-        log.log(loglvl, 'git.install.1', 'cloned ' + gitName + ' into tmp folder')
-        return repo.getMasterCommit();
-     }, (err) => {
-      cb(err);
-     })
-     .then((commit) => {
-        version = commit.sha();
-        log.log(loglvl, 'git.install.2', 'cloned ' + gitName + ' into tmp folder')
-        examineRepo(folder);
-        return commit.getTree();
-     }, (err) => {
-      cb(err);
-     })
-  })
 }
 
-function filterGit(folderList) {
-  let filtered = [];
-  folderList.forEach((f) => {
-    if (path.basename(f) != '.git') {
-      filtered.push(f);
-    }
-  })
-  return filtered;
-}
