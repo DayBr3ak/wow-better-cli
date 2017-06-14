@@ -88,7 +88,7 @@ export class GitAddon {
     let dest, tmpFolders, folders;
     if (foundToc) {
       log.log(loglvl, 'git.install', 'copying root folder');
-      tmpFolders = [repoFolder];
+      tmpFolders = [folder];
       dest = path.join(addonsDir, gitName);
     } else {
       tmpFolders = listPathJoined;

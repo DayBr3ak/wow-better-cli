@@ -1,6 +1,6 @@
 {
   "name": "wow-better-cli",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "World Of Warcraft addon downloader and manager",
   "main": "lib/index.js",
   "dependencies": {
@@ -18,9 +18,15 @@
   },
   "scripts": {
     "test": "babel src -d dist && babel tests -d tests_dist && mocha ./tests_dist/test",
+    "build": "babel src -d dist",
     "dev": "babel src -d dist && node dist/cli.js",
-    "clean": "rm -rf dist/ && rm -rf tests_dist"
+    "clean": "rm -rf dist/ && rm -rf tests_dist",
+    "prepublish": "npm run build"
   },
+  "files": [
+    "dist",
+    "bin"
+  ],
   "bin": {
     "wow": "./bin/wow"
   },
@@ -33,7 +39,9 @@
     "world",
     "warcraft",
     "downloader",
-    "cli"
+    "cli",
+    "addons",
+    "addon"
   ],
   "author": "Zeke Sonxx <github.com/zekesonxx>",
   "license": "MIT",
