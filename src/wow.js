@@ -1,6 +1,5 @@
 'use strict';
 const downloader = require('./downloader');
-const async = require('async');
 const log = require('npmlog');
 const fs = require('fs');
 const path = require('path');
@@ -12,7 +11,7 @@ const util = require('./util');
 log.addLevel('Wow', 3000, { fg: 'red' });
 const platforms = downloader.platforms;
 
-const Save = require('../lib/save.js');
+const Save = require('./save.js');
 const saveFileName = '.addons.json';
 
 function Wow () {

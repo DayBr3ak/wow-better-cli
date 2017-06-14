@@ -1,14 +1,13 @@
 // cli.js
-'use strict';
 
 const log = require('npmlog');
 const path = require('path');
 const cli = require('cli');
 const archy = require('archy');
 
-const Save = require('./lib/save.js');
-const Wow = require('./lib/wow.js');
-const util = require('./lib/util.js');
+const Save = require('./save.js');
+const Wow = require('./wow.js');
+const util = require('./util.js');
 
 log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
 
@@ -146,7 +145,7 @@ function findWowDir(options, cb) {
 }
 
 function handleCliError(wow) {
-  bettterHelp(wow);
+  betterHelp(wow);
 }
 
 function install(wow, args, options) {
@@ -407,7 +406,7 @@ function reinstall(wow, args, options) {
   })
 }
 
-function bettterHelp(wow) {
+function betterHelp(wow) {
   console.log('wow: World Of Warcraft Addon Manager v%s', wow.version());
   console.log('     Completely unassociated with Blizzard');
   console.log('   ');

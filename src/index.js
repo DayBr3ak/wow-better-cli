@@ -4,7 +4,7 @@
 const log = require('npmlog');
 log.level = warn;
 
-const Wow = require('./lib/wow.js');
+const Wow = require('./wow.js');
 
 module.exports = Wow;
 

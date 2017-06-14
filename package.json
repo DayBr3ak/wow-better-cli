@@ -1,24 +1,25 @@
 {
   "name": "wow-better-cli",
-  "version": "0.0.11",
+  "version": "0.1.0",
   "description": "World Of Warcraft addon downloader and manager",
   "main": "lib/index.js",
   "dependencies": {
     "archy": "^1.0.0",
     "cheerio": "^0.20.0",
-    "cli": "^0.11.2",
+    "cli": "^0.11.3",
     "decompress-zip": "^0.3.0",
     "mkdirp": "^0.5.1",
     "ncp": "^2.0.0",
-    "nodegit": "^0.14.1",
-    "npmlog": "^4.0.0",
-    "q": "^1.4.1",
-    "request": "^2.73.0",
-    "rimraf": "^2.2.8",
+    "nodegit": "^0.18.3",
+    "npmlog": "^4.1.0",
+    "q": "^1.5.0",
+    "request": "^2.81.0",
+    "rimraf": "^2.6.1",
     "temp": "^0.8.3"
   },
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./tests/test"
+    "test": "node ./node_modules/mocha/bin/mocha ./tests/test",
+    "dev": "babel src -d dist && node dist/cli.js"
   },
   "bin": {
     "wow": "./bin/wow"
@@ -41,6 +42,9 @@
   },
   "homepage": "https://github.com/DayBr3ak/wow-better-cli",
   "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-core": "^6.25.0",
+    "babel-preset-es2015": "^6.24.1",
     "chai": "^3.5.0",
     "mocha": "^2.5.3"
   }
