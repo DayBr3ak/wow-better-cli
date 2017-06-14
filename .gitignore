@@ -1,5 +1,8 @@
 node_modules/*
+dist/
+tests_dist/
 npm-debug.log
 
 *.sublime-*
 notwow
+package-lock.json
