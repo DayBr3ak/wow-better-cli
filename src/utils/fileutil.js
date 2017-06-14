@@ -1,5 +1,8 @@
 const fs = require('fs');
-const temp = require('temp');
+let temp = require('temp');
+// if (!global.DEBUG) {
+  // temp = temp.track();
+// }
 const _mkdirp = require('mkdirp');
 const ncp = require('ncp');
 const _rimraf = require('rimraf');

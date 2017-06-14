@@ -70,9 +70,9 @@ export class GitAddon {
     let version = commit.sha();
     log.log(loglvl, 'git.install.2', 'cloned ' + gitName + ' into tmp folder');
 
-    let list = await readDir(folder);
+    const listOrigin = await readDir(folder);
     log.log(loglvl, 'git.install', 'examining repo ' + gitName);
-    list = this.filterGit(list);
+    const list = listOrigin.filter(f => (path.basename(f) !== '.git' && path.basename(f) !== '.gitlab'));
 
     let foundToc = false;
     const listPathJoined = [];
@@ -85,7 +85,7 @@ export class GitAddon {
       }
     }
 
-    let dest;
+    let dest, tmpFolders, folders;
     if (foundToc) {
       log.log(loglvl, 'git.install', 'copying root folder');
       tmpFolders = [repoFolder];
@@ -100,7 +100,7 @@ export class GitAddon {
     if (foundToc) {
       folders = [gitName];
     } else {
-      folders = this.filterGit(list);
+      folders = list;
     }
 
     if (version && folders) {
@@ -112,10 +112,6 @@ export class GitAddon {
     }
 
     // return commit.getTree();
-  }
-
-  filterGit(folderList) {
-    return folderList.filter(f => path.basename(f) !== '.git');
   }
 }
 

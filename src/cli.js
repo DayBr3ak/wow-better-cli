@@ -1,4 +1,7 @@
 // cli.js
+if (global.DEBUG === undefined) {
+  global.DEBUG = true;
+}
 
 const log = require('npmlog');
 const path = require('path');
@@ -11,9 +14,6 @@ import * as util from './utils/util';
 
 log.addLevel('cli', 3000, { fg: 'cyan' }, 'CLI');
 
-if (global.DEBUG === undefined) {
-  global.DEBUG = true;
-}
 const DEFAULT_PLATFORM = 'curse';
 const DEFAULTS_WOWDIR = {
   '1': path.join('C:', 'Program Files', 'World Of Warcraft'),
@@ -142,6 +142,9 @@ function cliErrhandler(err) {
   if (err.code === "ARGS_ERROR") {
     return cli.error('ArgsError: ' + err.message);
   }
+  if (err.code === 'ADDON_NOT_FOUND') {
+    return cli.error('AddonNotFound: ' + err.message);
+  }
   cli.error(err);
   log.error('cli', err);
   process.exit(1);
@@ -160,14 +163,11 @@ manager.add('install', async (wow, args, options) => {
   const addons = args;
   const platform = options.platform;
   const version = options.version ? options.version : null;
-  try {
-    const results = await util.installAddonList(wow, addons);
-    for (let r of results) {
-      cli.ok('Installed ' + r);
-    }
-  } catch(err) {
-    throw 'error in batch install';
+  const results = await wow.installAddonList(addons);
+  for (let r of results) {
+    cli.ok('Installed ' + r);
   }
+
 });
 
 manager.add('changewow', async (wow, args, options) => {
@@ -198,199 +198,162 @@ manager.add('testls', async (wow, args, options) => {
   }
 });
 
-function uninstall(wow, args, options) {
+manager.add('uninstall', async (wow, args, options) => {
   log.cli('uninstall', 'uninstall cmd')
-
   if (args.length < 1) {
-    // error message
-    handleCliError(wow);
-    // log.cli('error', 'Should specify addon as argument')
-    return
+    throw {code: 'ARGS_ERROR', message: 'need at least one addon to uninstall'};
   }
 
-  let addonName = args[0];
-  wow.uninstall(addonName, (err) => {
-    if (err && err == 'not found') {
-      return cli.error(`${addonName} not found`);
-    }
-    if (err) {
-      return cliErrhandler(err);
-    }
-    cli.ok(`${addonName} uninstalled succesfully`);
-  });
-}
+  const uninstaller = async (addon) => {
+    await wow.uninstall(addon);
+    cli.ok(`${addon} uninstalled succesfully`);
+  }
+  const awaits = [];
+  for (let addon of args) {
+    awaits.push(uninstaller(addon));
+  }
+  await Promise.all(awaits);
+});
 
-function listInstalledAddons(wow, args, options) {
+manager.add('installed', async (wow, args, options) => {
   log.cli('listInstalledAddons');
-  wow.getConfigData((err, data) => {
-    if (err) {
-      return cliErrhandler(err);
-    }
-
-    if (data && data.addons) {
-      let names = Object.keys(data.addons);
-      console.log(names.length + ' addon' + (names.length !== 1 ? 's' : '') + ' installed');
-      names.forEach(function(addon) {
-        console.log('- '+addon);
-      });
-    }
-  })
-}
-
-function checkupdate(wow, args, options) {
-  log.cli('checkupdate');
-
-  if (args.length > 1) {
-    return handleCliError(wow);
+  const data = await wow.getConfigData();
+  if (data && data.addons) {
+    let names = Object.keys(data.addons);
+    console.log(names.length + ' addon' + (names.length !== 1 ? 's' : '') + ' installed');
+    names.forEach(function(addon) {
+      console.log('- '+addon);
+    });
   }
+});
+
+manager.add('checkupdate', async (wow, args, options) => {
+  log.cli('checkupdate');
+  if (args.length > 1) {
+    throw {code: 'ARGS_ERROR', message: 'need 0 or 1 args'};
+  }
+
   if (args.length == 1) {
     let addonName = args[0];
 
-    return wow.checkupdate(addonName, (err, hasUpdate, platform, zipUrl, version) => {
-      if (err) {
-        return cliErrhandler(err);
-      }
-      if (hasUpdate) {
-         console.log('Update Available! Install using $ wow install %s', addonName);
-      } else {
-        console.log('No updated version found');
-      }
-    })
-  }
-
-  wow.checkAllAddonsForUpdate((err, updatesAvailable) => {
-    if (err) {
-      return cliErrhandler(err);
+    const [hasUpdate, platform, zipUrl, version] = await wow.checkupdate(addonName);
+    if (hasUpdate) {
+       console.log('Update Available! Install using $ wow install %s', addonName);
+    } else {
+      console.log('No updated version found');
     }
+  } else {
+    const updatesAvailable = await wow.checkAllAddonsForUpdate();
     let num = updatesAvailable.length
     if (num == 0) {
       return console.log('Nothing to update');
     }
     console.log('%s addon%s updates: %s', num, (num !== 1 ? 's have' : ' has'), updatesAvailable.join(', '));
-  })
-}
+  }
+});
 
-function update(wow, args, options) {
+manager.add('update', async (wow, args, options) => {
   if (args.length == 1) {
     // one addon
     let addonName = args[0];
-    wow.update(addonName, (err, hasUpdate) => {
-      if (err) {
-        return cliErrhandler(err);
-      }
-      if (!hasUpdate) {
-        console.log('No update available for ' + addonName);
-      } else {
-        console.log('succesfully updated ' + addonName)
-      }
-    })
+    const hasUpdate = await wow.update(addonName);
+    if (!hasUpdate) {
+      console.log('No update available for ' + addonName);
+    } else {
+      console.log('succesfully updated ' + addonName)
+    }
     return;
   }
 
-  wow.getConfigData((err, data) => {
-    if (err) {
-      return cliErrhandler(err);
+  const data = await wow.getConfigData();
+  const updater = async (addonName) => {
+    const hasUpdate = await wow.update(addonName);
+    if (!hasUpdate) {
+      // console.log('No update available for ' + addonName);
+    } else {
+      cli.ok('succesfully updated ' + addonName)
     }
-    if (data && data.addons) {
-      Object.keys(data.addons).forEach(function(addonName) {
-        wow.update(addonName, (err, hasUpdate) => {
-          if (err) {
-            cliErrhandler(err);
-          }
+  };
 
-          if (!hasUpdate) {
-            // console.log('No update available for ' + addonName);
-          } else {
-            cli.ok('succesfully updated ' + addonName)
-          }
-        })
-      });
+  const awaits = [];
+  if (data && data.addons) {
+    for (let addonName of Object.keys(data.addons)) {
+      awaits.push(updater(addonName));
     }
-  })
-}
-
-function platforms(wow, args, options) {
-  console.log('Available Platforms: %s', wow.platforms().join(', '));
-}
-
-
-function ls(wow, args, options) {
-  wow.getConfigData((err, data) => {
-    if (err) {
-      return cliErrhandler(err);
-    }
-    if (!data || !data.addons) {
-      return console.log('config file is empty');
-    }
-    let folders = [];
-    Object.keys(data.addons).forEach(function(addon) {
-      var addondata = data.addons[addon];
-      folders.push({
-        label: `[${addondata.platform}:${addon} r${addondata.version}]`,
-        nodes: addondata.folders.sort()
-      });
-    });
-    folders.sort();
-    console.log(archy({
-      label: wow.getAddonsDir(),
-      nodes: folders
-    }));
-  })
-}
-
-function blame(wow, args, options) {
-  if (args.length != 1) {
-    return handleCliError(wow);
   }
-  wow.blame(args[0], function(err, addons) {
-    if (err) {
-      return cliErrhandler(err);
-    }
-    if (addons.length == 0) {
-      return console.log('Unknown folder ' + args[0]);
-    }
-    console.log('Folder %s is from %s', args[0], addons.join(', '));
-  });
-}
+  if (awaits.length === 0) {
+    console.log('0 addons are installed, nothing to update.');
+  }
+  await Promise.all(awaits);
+});
 
-function version(wow, args, options) {
+manager.add('platforms', async (wow, args, options) => {
+  console.log('Available Platforms: %s', wow.platforms().join(', '));
+});
+
+
+manager.add('ls', async (wow, args, options) => {
+  const data = await wow.getConfigData();
+  if (!data || !data.addons) {
+    return console.log('config file is empty');
+  }
+  let folders = [];
+  for (let addon of Object.keys(data.addons)) {
+    const addondata = data.addons[addon];
+    folders.push({
+      label: `[${addondata.platform}:${addon} r${addondata.version}]`,
+      nodes: addondata.folders.sort()
+    });
+  }
+  folders.sort();
+  console.log(archy({
+    label: wow.getAddonsDir(),
+    nodes: folders
+  }));
+});
+
+manager.add('blame', async (wow, args, options) => {
+  if (args.length !== 1) {
+    throw {code: 'ARGS_ERROR', message: 'Need exactly one argument.'};
+  }
+  const addons = await wow.blame(args[0]);
+  if (addons.length === 0) {
+    return console.log('Unknown folder ' + args[0]);
+  }
+  console.log('Folder %s is from %s', args[0], addons.join(', '));
+});
+
+manager.add('version', async (wow, args, options) => {
   cli.ok(`v${wow.version()}`);
-}
+});
 
-function reinstall(wow, args, options) {
-  wow.getConfigData((err, data) => {
-    if (err) {
-      return cliErrhandler(err);
-    }
-    if (!data || !data.addons || Object.keys(data.addons).length == 0) {
-      return cli.ok('Nothing to reinstall');
-    }
-    let addonReinstall = []
-    Object.keys(data.addons).forEach((addonName) => {
-      addonReinstall.push({
-        version: data.addons[addonName].version,
-        name: addonName
-      })
-    })
+manager.add('reinstall', async (wow, args, options) => {
+  const data = await wow.getConfigData();
+  if (!data || !data.addons || Object.keys(data.addons).length == 0) {
+    return cli.ok('Nothing to reinstall');
+  }
+  let addonReinstall = []
+  for (let addonName of Object.keys(data.addons)) {
+    addonReinstall.push({
+      version: data.addons[addonName].version,
+      name: addonName
+    });
+  }
 
-    util.installAddonList(wow, addonReinstall)
-      .then((results) => {
-        cli.ok(`Correctly reinstalled ${results.length} addons`);
-      }, (err) => {
-         cli.error('Error in reinstall addons');
-         return cliErrhandler(err);
-      }, (progress) => {
-        cli.ok('Reinstalled ' + progress);
-      })
+  const results = await wow.installAddonList(addonReinstall);
+  cli.ok(`Correctly reinstalled ${results.length} addons`);
+});
 
-  })
-}
+manager.add('help', async (wow) => {
+  betterHelp(wow);
+});
 
 function betterHelp(wow) {
   console.log('wow: World Of Warcraft Addon Manager v%s', wow.version());
   console.log('     Completely unassociated with Blizzard');
   console.log('   ');
   console.log('    platforms: List available addon platforms');
+  console.log('    help: Display this message');
   console.log('  Installing:');
   console.log('    install <addon>: Install an addon');
   console.log('        -p --platform Select the platform of the addon. Defaults to `curse`');
@@ -404,16 +367,17 @@ function betterHelp(wow) {
   console.log('    reinstall: Forcefully reinstall all addons saved in the config file');
   console.log('  Managing:');
   console.log('    installed: List installed addons');
-  console.log('    ls, folders: List addons and their folders');
+  console.log('    changewow [folder]: Change wow folder');
+  console.log('    ls: List addons and their folders');
   console.log('    blame <folder>: Figure out which addon an addon folder is from');
-  console.log('  Internals/Automation:');
-  console.log('    Do note that many of these will supress all output except for the requested output');
+  // console.log('  Internals/Automation:');
+  // console.log('    Do note that many of these will supress all output except for the requested output');
   // console.log('    dlurl <addon>: Get a download URL.');
   // console.log('        -s --source Addon source, see above');
   // console.log('        -v --version Addon version, see above');
   console.log('    ');
   console.log('    wow-cli is licensed under the MIT license');
-  console.log('    https://github.com/zekesonxx/wow-cli');
+  console.log('    https://github.com/DayBr3ak/wow-better-cli');
 }
 
 manager.setup();

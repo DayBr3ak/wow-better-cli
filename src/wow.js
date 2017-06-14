@@ -93,6 +93,9 @@ export class Wow  {
   async checkupdate(addonName) {
     log.Wow('checkupdate');
     const fileData = await this.saveFd.read();
+    if (!fileData.addons[addonName]) {
+      throw {code: 'ADDON_NOT_FOUND', message: `addon ${addonName} isn't installed.`};
+    }
     const platform = fileData.addons[addonName].platform;
     const version = fileData.addons[addonName].version;
     const fetcher = platforms[platform];
@@ -184,6 +187,14 @@ export class Wow  {
 
   async installAddonList(addonList) {
     const results = [];
+
+    const installer = async (name, version) => {
+      await this.install(name, version);
+      log.info('installAddonList', `name: ${name}, version: ${version}`);
+      return [name, version];
+    };
+
+    const awaits = [];
     for (let addonParams of addonList) {
       let name, version;
       if (addonParams.name) {
@@ -193,16 +204,10 @@ export class Wow  {
         name = addonParams;
         version = null;
       }
-      log.info('installAddonList', `name: ${name}, version: ${version}`);
-
-      try {
-        await this.install(name, version);
-        results.push([name, version]);
-      } catch(err) {
-        log.info(`Could not install (name: ${name}, version: ${version})`);
-      }
+      awaits.push(installer(name, version));
     }
-    return results;
+
+    return await Promise.all(awaits);
   }
 
 }

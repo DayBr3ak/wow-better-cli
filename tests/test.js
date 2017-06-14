@@ -1,8 +1,10 @@
 // test.js
-'use strict';
+if (global.DEBUG === undefined) {
+  global.DEBUG = true;
+}
+
 const fs = require('fs');
 const path = require('path');
-const temp = require('temp').track();
 
 const chai = require('chai');
 const assert = chai.assert;
@@ -25,7 +27,7 @@ import * as util from '../dist/utils/util';
 import { exists } from '../dist/utils/fileutil';
 const makeTmpWowFolder = util.makeTmpWowFolder;
 
-const testTimeout = 5 * 1000;
+const testTimeout = 8 * 1000;
 
 describe('Util', function() {
   describe('parsePlatform', function() {
@@ -211,7 +213,7 @@ describe('downloader', function() {
 describe('download wow addon into wow folder', function() {
   describe('with tukui', function () {
     it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
-      this.timeout(testTimeout);
+      this.timeout(testTimeout * 2);
 
       try {
         const wowPath = await makeTmpWowFolder();
@@ -230,7 +232,7 @@ describe('download wow addon into wow folder', function() {
 
   describe('with wowinterface', function () {
     it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
-      this.timeout(testTimeout);
+      this.timeout(testTimeout * 2);
 
       try {
         const wowPath = await makeTmpWowFolder();
@@ -247,9 +249,28 @@ describe('download wow addon into wow folder', function() {
     })
   })
 
+  describe('with git', function () {
+    it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
+      this.timeout(testTimeout * 2);
+
+      try {
+        const wowPath = await makeTmpWowFolder();
+        should.exist(wowPath);
+        let wow = new Wow(wowPath, wowPath);
+        await wow.install('http://git.tukui.org/Tukz/tukui.git', null);
+        const fileExist = await exists(wow.getSaveFile());
+        fileExist.should.equal(true);
+      } catch(err) {
+        log.error('test', err);
+        should.not.exist(err);
+      }
+
+    })
+  })
+
   describe('with curse', function () {
     it('should download an addon, extract it, and place it into the wow interface addons folder', async function() {
-      this.timeout(testTimeout);
+      this.timeout(testTimeout * 2);
 
       try {
         const wowPath = await makeTmpWowFolder();

@@ -14,23 +14,23 @@ wow-better-cli is, as the name implies, a CLI tool. The tool will keep track of 
 
 ## Features
 Implemented:
-* Install addons from Curse, TukUI.org, and WoWInterface
+* Install addons from Curse, TukUI.org, WoWInterface and Git
 * Uninstall addons
 * Update addons
 * List installed addons
-* Cache of addon zip files for reinstalling and the like
+<!-- * Cache of addon zip files for reinstalling and the like -->
 * Folder blame
 * Change wow directory
 * Reinstall all addons in the addons.json
 
-Planned (in no particular order):
-* Install addons from git/svn/hg repos
-* Better user interface
-* .addons.json backups
-* Metadata display
-* (far future) GUI
-* logcat
-* Saved variable messing with
+<!-- Planned (in no particular order): -->
+<!-- * Install addons from git/svn/hg repos -->
+<!-- * Better user interface -->
+<!-- * .addons.json backups -->
+<!-- * Metadata display -->
+<!-- * (far future) GUI -->
+<!-- * logcat -->
+<!-- * Saved variable messing with -->
 
 
 ## Usage
@@ -42,20 +42,17 @@ wow: World Of Warcraft Addon Manager v0.0.4
     sources: List available addon sources
   Installing:
     install <addon-name>: Install an addon
-        -s --source Select the source of the addon. Defaults to `curse`
+        -p --platform Select the source of the addon. Defaults to `curse`
         -v --version Install a specific version of the addon.
-           --cache <true/false> Enable or disable the cache. Defaults to true
     checkupdate <addon>: Check if there's an update to an addon
     update [addon]: Updates all addons, or the addon in the first argument.
-        -c --concur How many downloads to run when updating all the addons.
-                    Default: 1. Recommended: 1-4.
     uninstall <addon-name>: Uninstall a previously installed addon
   Managing:
     installed: List installed addons
-    ls, folders: List addons and their folders
+    ls: List addons and their folders
     blame <folder>: Figure out which addon an addon folder is from
 ```
-Currently supports Curse, TukUI.org, and WoWInterface addons.
+Currently supports Curse, TukUI.org, WoWInterface and Git addons.
 
 ## Legal
 Licensed under the MIT license.
