@@ -1,6 +1,7 @@
 # wow-better-cli
 
 [![Dependency Status](https://david-dm.org/daybr3ak/wow-better-cli.svg)](https://david-dm.org/daybr3ak/wow-better-cli)
+[![Build status](https://ci.appveyor.com/api/projects/status/80n7g3005oy2csnw?svg=true)](https://ci.appveyor.com/project/DayBr3ak/wow-better-cli)
 
 This is a fork from zekesonxx wow-cli project. The project is unmaintened so I took over.
 
