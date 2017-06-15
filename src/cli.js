@@ -7,6 +7,7 @@ const log = require('npmlog');
 const path = require('path');
 const cli = require('cli');
 const archy = require('archy');
+const readline = require('readline');
 
 import { Save } from './save';
 import { Wow } from './wow';
@@ -21,6 +22,7 @@ const DEFAULTS_WOWDIR = {
   '3': path.join('C:', 'World Of Warcraft'),
   '4': path.join('D:', 'World Of Warcraft')
 }
+const DEFAULTS_WOWDIR_OTHER = Object.keys(DEFAULTS_WOWDIR).length + 1;
 
 let parseOptions = {
   platform: [ 'p', 'Select the platform of the addon.', 'string', DEFAULT_PLATFORM],          // -f, --file FILE   A file to process
@@ -34,48 +36,52 @@ class CliManager {
   }
 
   async promptWowDir(configFile, data={}) {
-    const readline = require('readline');
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
+    const question = (q) => new Promise(r => rl.question(q, r)); // one liner for await syntax
 
     console.log('Where is your World of Warcraft folder ?');
     for (let n of Object.keys(DEFAULTS_WOWDIR)) {
       console.log(`  ${n}. ${DEFAULTS_WOWDIR[n]}`);
     }
-    console.log(`  ${DEFAULTS_WOWDIR.length}. Other`)
-
-    const question = (questionString) => {
-      return new Promise((resolve) => {
-        rl.question(questionString, (answer) => {
-          resolve(answer);
-          rl.close();
-        });
-      });
-    };
-    // const question = (q) => return new Promise(r => rl.question(q, r));
+    console.log(`  ${DEFAULTS_WOWDIR_OTHER}. Other`)
 
     const answer = await question('');
+    const parsedAnswer = parseInt(answer);
+    if (isNaN(parsedAnswer) || parsedAnswer < 1 || parsedAnswer > DEFAULTS_WOWDIR_OTHER) {
+      rl.close();
+      throw {code: 'ARGS_ERROR', message: "Choose one of the options available."};
+    }
     let wowdir = null;
 
-    if (parseInt(answer) >= DEFAULTS_WOWDIR.length) {
-      const askedPath = await question('Enter the path:\n');
+    if (parsedAnswer === DEFAULTS_WOWDIR_OTHER) {
+      const askedPath = await question('Enter the path:  ');
       log.cli('wowdir answer', 'should be in ' + askedPath);
       wowdir = askedPath;
     } else {
       wowdir = DEFAULTS_WOWDIR[answer];
     }
-    //   default: {
-    //     throw 'Wrong choice, please enter 1, 2 or 3';
-    //   }
-    // }
+    wowdir = path.normalize(wowdir);
 
-    if (!wowdir) { // FIXME actually check if dir exists
-      throw 'error wrong directory specified'
+    console.log('Your World Of Warcraft directory has been saved as');
+    console.log(`"${wowdir}"`);
+
+    const isValid = (await question("Is it correct? [Y/n]: ")).toLowerCase();
+    rl.close();
+
+    if (isValid !== '' && isValid !== 'y') {
+      // recursion
+      wowdir = await this.promptWowDir(configFile, data);
+    } else {
+      if (!wowdir) {
+        throw {code: 'WRONG_WOWDIR', message: 'error wrong directory specified'};
+      }
+      data.wowdir = wowdir;
+      await configFile.write(data);
+      cli.ok(`Your Wow directory is now "${wowdir}"`);
     }
-    data.wowdir = path.normalize(wowdir);
-    await configFile.write(data);
     return wowdir;
   }
 
@@ -145,6 +151,9 @@ function cliErrhandler(err) {
   if (err.code === 'ADDON_NOT_FOUND') {
     return cli.error('AddonNotFound: ' + err.message);
   }
+  if (err.code === 'WRONG_WOWDIR') {
+    return cli.error('WrongWowDirectory: ' + err.message);
+  }
   cli.error(err);
   log.error('cli', err);
   process.exit(1);
@@ -155,10 +164,26 @@ function handleCliError(wow) {
 }
 
 const manager = new CliManager();
+
 manager.add('install', async (wow, args, options) => {
   log.cli('install', 'install cmd')
   if (args.length < 1) {
-    throw {code: 'ARGS_ERROR', message: 'need at least one addon to install'};
+    // the user didn't enter any args, try reinstalling what's in the config file.
+    const data = await wow.getConfigData();
+    if (!data || !data.addons || Object.keys(data.addons).length == 0) {
+      return cli.ok('Nothing to install in your config file.');
+    }
+    let addonReinstall = []
+    for (let addonName of Object.keys(data.addons)) {
+      addonReinstall.push({
+        version: data.addons[addonName].version,
+        name: addonName
+      });
+    }
+
+    const results = await wow.installAddonList(addonReinstall);
+    cli.ok(`Correctly installed ${results.length} addons`);
+    return;
   }
   const addons = args;
   const platform = options.platform;
@@ -167,7 +192,6 @@ manager.add('install', async (wow, args, options) => {
   for (let r of results) {
     cli.ok('Installed ' + r);
   }
-
 });
 
 manager.add('changewow', async (wow, args, options) => {
@@ -327,22 +351,22 @@ manager.add('version', async (wow, args, options) => {
   cli.ok(`v${wow.version()}`);
 });
 
-manager.add('reinstall', async (wow, args, options) => {
-  const data = await wow.getConfigData();
-  if (!data || !data.addons || Object.keys(data.addons).length == 0) {
-    return cli.ok('Nothing to reinstall');
-  }
-  let addonReinstall = []
-  for (let addonName of Object.keys(data.addons)) {
-    addonReinstall.push({
-      version: data.addons[addonName].version,
-      name: addonName
-    });
-  }
+// manager.add('reinstall', async (wow, args, options) => {
+//   const data = await wow.getConfigData();
+//   if (!data || !data.addons || Object.keys(data.addons).length == 0) {
+//     return cli.ok('Nothing to reinstall');
+//   }
+//   let addonReinstall = []
+//   for (let addonName of Object.keys(data.addons)) {
+//     addonReinstall.push({
+//       version: data.addons[addonName].version,
+//       name: addonName
+//     });
+//   }
 
-  const results = await wow.installAddonList(addonReinstall);
-  cli.ok(`Correctly reinstalled ${results.length} addons`);
-});
+//   const results = await wow.installAddonList(addonReinstall);
+//   cli.ok(`Correctly reinstalled ${results.length} addons`);
+// });
 
 manager.add('help', async (wow) => {
   betterHelp(wow);
