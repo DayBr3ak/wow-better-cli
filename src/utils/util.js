@@ -131,42 +131,6 @@ export function getGitName(url) {
   return null;
 }
 
-export function installAddonListOld(wow, addonList) {
-  let mainDefer = q.defer();
-
-  let eventuallyInstall = (addonParams) => {
-    let defer = q.defer();
-    let name, version;
-    if (addonParams.name) {
-      name = addonParams.name;
-      version = addonParams.version;
-    } else {
-      name = addonParams;
-      version = null;
-    }
-    log.info('installAddonList', `name: ${name}, version: ${version}`);
-    wow.install(name, version, (err) => {
-      if (err) {
-        log.error('err install', name);
-        return defer.reject(err);
-      }
-      defer.resolve(name);
-      mainDefer.notify(name);
-    })
-
-    return defer.promise;
-  }
-
-  q.all(addonList.map(eventuallyInstall))
-    .then((results) => {
-      mainDefer.resolve(results);
-    }, (err) => {
-      mainDefer.reject(err);
-    })
-
-  return mainDefer.promise;
-}
-
 export async function copyFoldersTo(folders, dest) {
   if (folders.length === 1) {
     await copyFolder(folders[0], dest);
@@ -184,62 +148,6 @@ export async function copyFoldersTo(folders, dest) {
   await Promise.all(awaits);
 
 }
-
-
-export function copyFoldersToOld(folders, dest) {
-  let mainDefer = q.defer();
-
-  if (folders.length == 1) {
-    ncp(folders[0], dest, (err) => {
-      if (err)
-        mainDefer.reject(err);
-      else
-        mainDefer.resolve()
-    })
-    return mainDefer.promise;
-  }
-
-  let eventuallyCopy = (folder) => {
-    let defer = q.defer();
-    let newFolder = folder.split('\\'); // TODO unix
-    newFolder = newFolder[newFolder.length - 1];
-    let newDest = path.join(dest, newFolder);
-    log.info('copyFoldersTo', 'copying ' + folder + ' to ' + newDest);
-    ncp(folder, newDest, (err) => {
-      if (err) {
-        return defer.reject(err);
-      }
-      mainDefer.notify();
-      defer.resolve();
-    })
-
-    return defer.promise;
-  }
-  q.all(folders.map(eventuallyCopy))
-    .then(() => {
-      mainDefer.resolve();
-    }, (err) => {
-      mainDefer.reject(err);
-    })
-
-  return mainDefer.promise;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
