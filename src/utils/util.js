@@ -4,7 +4,7 @@
 const path = require('path');
 const log = require('npmlog');
 
-const tocReader = require('./tocreader.js');
+import { parseTocFile } from './tocreader';
 import { mkTempDir, mkdirp, readDir, folderStat, copyFolder } from './fileutil';
 
 export async function makeTmpWowFolder() {
@@ -52,7 +52,7 @@ export async function listMyAddonsInFolder(folder) {
 }
 
 export async function getUrlNameFromAddon(addonPath, cb) {
-  const toc = await tocReader.parse(getTocFileName(addonPath));
+  const toc = await parseTocFile(getTocFileName(addonPath));
   const key = 'X-Curse-Project-ID'
   return toc[key];
 }

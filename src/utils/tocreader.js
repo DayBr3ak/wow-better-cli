@@ -1,7 +1,7 @@
 const path = require('path');
 import { readFile } from './fileutil';
 
-export async function parse (tocfilePath) {
+export async function parseTocFile (tocfilePath) {
   const content = await readFile(tocfilePath, {encoding: 'utf-8'});
   const lines = content.split('\n');
   const result = {};

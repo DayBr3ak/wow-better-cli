@@ -326,7 +326,7 @@ manager.add('ls', async (wow, args, options) => {
   for (let addon of Object.keys(data.addons)) {
     const addondata = data.addons[addon];
     folders.push({
-      label: `[${addondata.platform}:${addon} r${addondata.version}]`,
+      label: `[${addondata.platform}:${addon}, version:${addondata.version}]`,
       nodes: addondata.folders.sort()
     });
   }
