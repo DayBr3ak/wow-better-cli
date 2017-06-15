@@ -18,7 +18,6 @@ try {
 } catch(err) {
   log.error('git', 'package nodegit is not available');
   log.error('git', 'be sure to have the package <nodegit> installed if you want to use git based addons');
-  process.exit(0);
 }
 
 export class GitAddon {
