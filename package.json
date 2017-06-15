@@ -1,6 +1,6 @@
 {
   "name": "wow-better-cli",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "World Of Warcraft addon downloader and manager",
   "main": "lib/index.js",
   "dependencies": {
@@ -29,7 +29,8 @@
     "bin"
   ],
   "bin": {
-    "wow": "./bin/wow"
+    "wow": "./bin/wow",
+    "wow-better-cli": "./bin/wow"
   },
   "repository": {
     "type": "git",
