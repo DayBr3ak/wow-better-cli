@@ -1,4 +1,5 @@
-// cli.js
+import "babel-polyfill";
+
 if (global.DEBUG === undefined) {
   global.DEBUG = true;
 }
