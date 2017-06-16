@@ -1,6 +1,7 @@
 # wow-better-cli
 
 [![Dependency Status](https://david-dm.org/daybr3ak/wow-better-cli.svg)](https://david-dm.org/daybr3ak/wow-better-cli)
+[![Build status](https://ci.appveyor.com/api/projects/status/80n7g3005oy2csnw?svg=true)](https://ci.appveyor.com/project/DayBr3ak/wow-better-cli)
 
 This is a fork from zekesonxx wow-cli project. The project is unmaintened so I took over.
 
@@ -55,6 +56,24 @@ wow: World Of Warcraft Addon Manager v0.0.4
     blame <folder>: Figure out which addon an addon folder is from
 ```
 Currently supports Curse, TukUI.org, WoWInterface and Git addons.
+
+## Example
+
+(Don't forget double quotes on url)
+```text
+$ wow install "https://mods.curse.com/addons/wow/atlasloot-enhanced"
+$ wow install atlasloot-enhanced
+
+$ wow install "http://www.wowinterface.com/downloads/info5217-BuyEmAll.html"
+$ wow install wowinterface:5217-BuyEmAll (equivalent to the command above)
+
+$ wow install "http://www.tukui.org/addons/index.php?act=view&id=164"
+$ wow install tukui:164 (equivalent to the command above)
+
+$ wow install elvui
+$ wow install "https://github.com/<githubrepo>.git"
+
+```
 
 ## Legal
 Licensed under the MIT license.
