@@ -195,8 +195,12 @@ manager.add('install', async (wow, args, options) => {
   }
 });
 
+manager.add('info', async (wow) => {
+  cli.ok(`Your Wow directory is: "${wow.getDirectory()}"`);
+});
+
 manager.add('changewow', async (wow, args, options) => {
-  const data = await wow.saveFd.read();
+  const data = await wow.getConfigData();
   delete data.wowdir;
   if (args.length < 1) {
     const newWowdir = await manager.promptWowDir(wow.saveFd, data);
@@ -392,6 +396,7 @@ function betterHelp(wow) {
   console.log('    reinstall: Forcefully reinstall all addons saved in the config file');
   console.log('  Managing:');
   console.log('    installed: List installed addons');
+  console.log('    info : Remind you of your wow folder');
   console.log('    changewow [folder]: Change wow folder');
   console.log('    ls: List addons and their folders');
   console.log('    blame <folder>: Figure out which addon an addon folder is from');

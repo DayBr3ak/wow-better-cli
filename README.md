@@ -48,6 +48,8 @@ wow: World Of Warcraft Addon Manager v0.0.4
     update [addon]: Updates all addons, or the addon in the first argument.
     uninstall <addon-name>: Uninstall a previously installed addon
   Managing:
+    info: Remind you where your wow folder is
+    changewow [folder]: Change your wow folder
     installed: List installed addons
     ls: List addons and their folders
     blame <folder>: Figure out which addon an addon folder is from

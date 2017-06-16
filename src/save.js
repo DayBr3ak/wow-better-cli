@@ -11,7 +11,7 @@ const userAppDataFolder = process.env.APPDATA || (process.platform == 'darwin' ?
 const appFolder = process.env.APPDATA ? "wowcli" : ".wowcli";
 
 export class Save {
-  constructor(pAppFolder) {
+  constructor(pAppFolder=null) {
     this.folder = pAppFolder || path.join(userAppDataFolder, appFolder);
     this.path = path.join(this.folder, 'addons.config.json');
     this.cached = false;

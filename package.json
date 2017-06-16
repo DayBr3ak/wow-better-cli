@@ -18,11 +18,13 @@
     "temp": "^0.8.3"
   },
   "scripts": {
-    "test": "babel src -d dist && babel tests -d tests_dist && mocha ./tests_dist/test",
+    "test": "npm run build && npm run build_tests && mocha ./tests_dist/test",
     "build": "babel src -d dist",
-    "dev": "babel src -d dist && node dist/cli.js",
+    "build_tests": "babel tests -d tests_dist",
+    "dist": "npm run build && node bin/wow",
+    "dev": "npm run build && node dist/cli.js",
     "clean": "rm -rf dist/ && rm -rf tests_dist",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "files": [
     "dist",

@@ -12,9 +12,13 @@ import { Save } from './save';
 const saveFileName = '.addons.json';
 
 export class Wow  {
-  constructor(wowpath, appfolder) {
+  constructor(wowpath, appfolder=null) {
     this.wowpath = wowpath;
     this.saveFd = new Save(appfolder);
+  }
+
+  getDirectory() {
+    return this.wowpath;
   }
 
   getAddonsDir() {
