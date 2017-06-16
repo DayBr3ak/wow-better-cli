@@ -177,6 +177,7 @@ manager.add('install', async (wow, args, options) => {
     let addonReinstall = []
     for (let addonName of Object.keys(data.addons)) {
       addonReinstall.push({
+        platform: data.addons[addonName].platform,
         version: data.addons[addonName].version,
         name: addonName
       });

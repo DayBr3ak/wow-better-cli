@@ -6,6 +6,7 @@ const log = require('npmlog');
 
 import { parseTocFile } from './tocreader';
 import { mkTempDir, mkdirp, readDir, folderStat, copyFolder } from './fileutil';
+import { gitRegex } from './parseplatform';
 
 export async function makeTmpWowFolder() {
   const wowFolder = await mkTempDir('wowfolder');
@@ -55,71 +56,6 @@ export async function getUrlNameFromAddon(addonPath, cb) {
   const toc = await parseTocFile(getTocFileName(addonPath));
   const key = 'X-Curse-Project-ID'
   return toc[key];
-}
-
-
-const tukuiRegex = /tukui:([0-9]+)$/;
-const tukuiRegex2 = /(?:tukui:)?(elvui|tukui)$/;
-const wowiRegex = /(?:(?:http:\/\/)?www\.)?wowinterface\.com\/downloads\/info([0-9]+)\-([A-Za-z0-9-_]+)(?:\.html)?$/;
-const wowiRegex2 = /wowinterface:([A-Za-z0-9-_]+)\-([0-9]+)$/;
-// const gitRegex = /.*\/([A-Za-z0-9-_])\.git$/
-const gitRegex = /(?:\w+:\/\/)(?:.+@)*(?:[\w\d\.]+)(?::[\d]+){0,1}\/*(.*)\.git$/
-
-const tukuiUI_git = {
-  'tukui': 'http://git.tukui.org/Tukz/tukui.git',
-  'elvui': 'http://git.tukui.org/Elv/elvui.git'
-}
-
-export function parsePlatform(addonName) {
-  let gitValid = gitRegex.exec(addonName);
-  if (gitValid && gitValid[1]) {
-    return  {
-      platform: 'git',
-      addon: addonName
-    }
-  }
-
-  let tkValid2 = tukuiRegex2.exec(addonName);
-  if (tkValid2 && tkValid2[1]) {
-    return {
-      platform: 'git',
-      addon: tukuiUI_git[ tkValid2[1] ]
-    }
-  }
-
-  let tukuiValidator = tukuiRegex.exec(addonName);
-  if (tukuiValidator && tukuiValidator[1]) {
-    return {
-      platform: 'tukui',
-      addon: 'tukui:' + tukuiValidator[1]
-    }
-  }
-
-  let wowiValid2 = wowiRegex2.exec(addonName);
-  // console.log(wowiValid2);
-  if (wowiValid2 && wowiValid2[1] && wowiValid2[2]) {
-    return {
-      platform: 'wowinterface',
-      addon: 'wowinterface:' + wowiValid2[1] + '-' + wowiValid2[2]
-    }
-  }
-
-  const wowinterfaceValidator = wowiRegex.exec(addonName);
-  //if result found && result is number
-  if (wowinterfaceValidator && wowinterfaceValidator[1] && String(parseInt(wowinterfaceValidator[1])) === wowinterfaceValidator[1]) {
-    const id = parseInt(wowinterfaceValidator[1]);
-    const addon = wowinterfaceValidator[2];
-
-    return {
-      platform: 'wowinterface',
-      addon: 'wowinterface:' + addon + '-' + id
-    }
-  }
-
-  return {
-    platform: 'curse',
-    addon: addonName
-  }
 }
 
 export function getGitName(url) {

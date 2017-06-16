@@ -3,7 +3,7 @@ const log = require('npmlog');
 const path = require('path');
 log.heading = 'wow';
 
-import { parsePlatform } from './utils/util';
+import { parsePlatform } from './utils/parseplatform';
 import { rimraf } from './utils/fileutil';
 import { platforms, downloadZipToTempFile, extractZip } from './downloader';
 
@@ -81,11 +81,16 @@ export class Wow  {
   ** @version, the version of the addon
   ** @cb, cb => return (error, addonFolders)
   **/
-  async install(pAddonName, pVersion) {
+  async install(pAddonName, pVersion, platform=null) {
     log.Wow('install');
-    let parsing = parsePlatform(pAddonName);
-    let platform = parsing.platform;
-    let addonName = parsing.addon;
+    let addonName;
+    if (platform) {
+      addonName = pAddonName;
+    } else {
+      const parsing = parsePlatform(pAddonName);
+      platform = parsing.platform;
+      addonName = parsing.addon;
+    }
     if (!this.isPlatformValid(platform)) {
       throw `platform ${platform} is not valid`;
     }
@@ -192,27 +197,26 @@ export class Wow  {
   async installAddonList(addonList) {
     const results = [];
 
-    const installer = async (name, version) => {
-      await this.install(name, version);
+    const installer = async (name, version=null, platform=null) => {
+      await this.install(name, version, platform);
       log.info('installAddonList', `name: ${name}, version: ${version}`);
-      return [name, version];
+      return name;
     };
 
     const awaits = [];
     for (let addonParams of addonList) {
-      let name, version;
+      let name, version, platform;
       if (addonParams.name) {
-        name = addonParams.name;
-        version = addonParams.version;
+        awaits.push(installer(addonParams.name, addonParams.version, addonParams.platform));
       } else {
-        name = addonParams;
-        version = null;
+        awaits.push(installer(addonParams));
       }
-      awaits.push(installer(name, version));
     }
 
     return await Promise.all(awaits);
   }
+
+
 
 }
 

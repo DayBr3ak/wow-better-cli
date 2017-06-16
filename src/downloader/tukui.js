@@ -75,9 +75,14 @@ export class Tukui {
 
     const tukuiRegex = /tukui:([0-9]+)$/;
     const isValid = tukuiRegex.exec(addon);
+    let addonId;
     if (isValid !== null) {
-      let addonId = parseInt(isValid[1]);
+      addonId = parseInt(isValid[1]);
       log.info('regex', isValid);
+    } else {
+      addonId = parseInt(addon);
+    }
+    if (!isNaN(addonId)) {
       let url = null;
       let version = null;
 

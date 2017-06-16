@@ -31,7 +31,7 @@ export class Wowinterface {
 
   async getDownloadURL(addon, pVersion) {
     if (pVersion !== null) {
-      log.warn('wowinterface', 'specific versions of wowinterface addons can\'t be installed (yet, is possible, will come soon).');
+      log.warn('wowinterface', 'specific versions of wowinterface addons can\'t be installed');// (yet, is possible, will come soon).');
     }
     const addonid = this.extractID(addon);
     const url = this.craftInfoURL(addonid);

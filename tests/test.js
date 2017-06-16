@@ -24,36 +24,43 @@ import * as downloader from '../dist/downloader';
 const curse = downloader.platforms.curse;
 
 import { Wow } from '../dist/wow';
-import * as util from '../dist/utils/util';
+import { parsePlatform } from '../dist/utils/parseplatform';
 import { exists } from '../dist/utils/fileutil';
-const makeTmpWowFolder = util.makeTmpWowFolder;
+import { makeTmpWowFolder } from '../dist/utils/util';
 
 const testTimeout = 8 * 1000;
 
 describe('Util', function() {
   describe('parsePlatform', function() {
-    it('should return tukui:128', function() {
-      let result = util.parsePlatform('tukui:128');
+
+    it('should return ace3', function() {
+      let result = parsePlatform('https://mods.curse.com/addons/wow/ace3');
+      result.platform.should.equal('curse');
+      result.addon.should.equal('ace3');
+    })
+
+    it('should return 128', function() {
+      let result = parsePlatform('tukui:128');
       result.platform.should.equal('tukui');
-      result.addon.should.equal('tukui:128');
+      result.addon.should.equal('128');
     })
 
     it('should return tukui', () => {
-      let result = util.parsePlatform('tukui:tukui');
+      let result = parsePlatform('tukui:tukui');
       result.platform.should.equal('git');
       // result.addon.should.equal('tukui');
 
-      result = util.parsePlatform('tukui');
+      result = parsePlatform('tukui');
       result.platform.should.equal('git');
       // result.addon.should.equal('tukui');
     })
 
     it('should return elvui', () => {
-      let result = util.parsePlatform('tukui:elvui');
+      let result = parsePlatform('tukui:elvui');
       result.platform.should.equal('git');
       // result.addon.should.equal('elvui');
 
-      result = util.parsePlatform('elvui');
+      result = parsePlatform('elvui');
       result.platform.should.equal('git');
       // result.addon.should.equal('elvui');
     })
@@ -61,14 +68,14 @@ describe('Util', function() {
     it('should return HardYards-22379', function() {
       let check = (result) => {
         result.platform.should.equal('wowinterface');
-        result.addon.should.equal('wowinterface:HardYards-22379');
+        result.addon.should.equal('HardYards-22379');
       }
-      check(util.parsePlatform('http://www.wowinterface.com/downloads/info22379-HardYards.html'))
-      check(util.parsePlatform('www.wowinterface.com/downloads/info22379-HardYards.html'))
-      check(util.parsePlatform('http://wowinterface.com/downloads/info22379-HardYards.html'))
-      check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards.html'))
-      check(util.parsePlatform('wowinterface.com/downloads/info22379-HardYards'))
-      check(util.parsePlatform('wowinterface:HardYards-22379'))
+      check(parsePlatform('http://www.wowinterface.com/downloads/info22379-HardYards.html'))
+      check(parsePlatform('www.wowinterface.com/downloads/info22379-HardYards.html'))
+      check(parsePlatform('http://wowinterface.com/downloads/info22379-HardYards.html'))
+      check(parsePlatform('wowinterface.com/downloads/info22379-HardYards.html'))
+      check(parsePlatform('wowinterface.com/downloads/info22379-HardYards'))
+      check(parsePlatform('wowinterface:HardYards-22379'))
     })
 
     it('should return a git url', () => {
@@ -78,7 +85,7 @@ describe('Util', function() {
       }
 
       let url = 'http://git.tukui.org/Azilroka/addonskins.git'
-      check(util.parsePlatform(url), url);
+      check(parsePlatform(url), url);
     })
   })
 })
@@ -330,13 +337,15 @@ describe('download wow addon into wow folder', function() {
         const addonsReinstall = [];
         for (let addonName of Object.keys(data.addons)) {
           const version = data.addons[addonName].version;
-          addonsReinstall.push({ name: addonName, version: version });
+          const plt = data.addons[addonName].platform;
+          addonsReinstall.push({ name: addonName, version: version, platform: plt });
         }
         addonsReinstall.length.should.equal(len);
         results = await wow.installAddonList(addonsReinstall);
         results.length.should.equal(len);
       } catch(err) {
         log.error('test', err);
+
         should.not.exist(err);
       }
     })
