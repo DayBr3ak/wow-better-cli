@@ -27,13 +27,15 @@ export async function downloadZipToTempFile(url) {
   log.fs('temp', info.path);
   await closeFd(info.fd);
   log.http('GET', url);
-  let [res, data] = await request({ url: url, encoding: null });
+
+  let [res, data] = await request({ url: url, encoding: null, progressbar: true });
   log.http(res.statusCode, url);
   await writeFile(info.path, data);
   log.fs('save', info.path);
   return info.path;
 }
 
+// not currently used
 export async function obtainZipFile(source, addon, url, nocache, cachedir) {
   let zipfilename = util.format('%s_%s__%s', source, addon, url.substr(url.lastIndexOf('/')+1));
   zipfilename = path.join(cachedir, zipfilename);
@@ -43,7 +45,7 @@ export async function obtainZipFile(source, addon, url, nocache, cachedir) {
     return zipfilename;
   }
   log.http('GET', url);
-  let [res, data] = await request({ url: url, encoding: null });
+  let [res, data] = await request({ url: url, encoding: null, progressbar: true });
   log.http(res.statusCode, url);
   await writeFile(zipfilename, data);
   log.fs('save', zipfilename);

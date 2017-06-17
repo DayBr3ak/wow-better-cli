@@ -115,4 +115,3 @@ export class GitAddon {
     // return commit.getTree();
   }
 }
-
