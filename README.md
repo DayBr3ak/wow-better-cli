@@ -2,12 +2,15 @@
 
 [![Dependency Status](https://david-dm.org/daybr3ak/wow-better-cli.svg)](https://david-dm.org/daybr3ak/wow-better-cli)
 [![Build status](https://ci.appveyor.com/api/projects/status/80n7g3005oy2csnw?svg=true)](https://ci.appveyor.com/project/DayBr3ak/wow-better-cli)
+[![Build status](https://travis-ci.org/DayBr3ak/wow-better-cli.svg?branch=master)](https://travis-ci.org/DayBr3ak/wow-better-cli)
+
 
 This is a fork from zekesonxx wow-cli project. The project is unmaintened so I took over.
 
 This is a World of Warcraft addon downloader, installer, uninstaller, and manager.
 
 ## Installation
+Be sure to have `git` installed in your path
 ```text
 $ npm install -g wow-better-cli
 ```
