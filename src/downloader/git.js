@@ -12,12 +12,54 @@ import { getGitName, copyFoldersTo } from '../utils/util';
 import { readDir, mkTempDir } from '../utils/fileutil';
 import { request } from '../utils/request';
 
-let Git = null;
-try {
-  Git = require('nodegit');
-} catch(err) {
-  log.error('git', 'package nodegit is not available');
-  log.error('git', 'be sure to have the package <nodegit> installed if you want to use git based addons');
+
+// let Git = null;
+// try {
+//   Git = require('nodegit');
+// } catch(err) {
+//   log.error('git', 'package nodegit is not available');
+//   log.error('git', 'be sure to have the package <nodegit> installed if you want to use git based addons');
+// }
+
+const SimpleGit = require('simple-git');
+
+class Commit {
+  constructor(com) {
+    this.com = com;
+  }
+
+  sha() {
+    return this.com.hash;
+  }
+}
+
+class Repo {
+  constructor(git) {
+    this.git = git;
+  }
+
+  getMasterCommit() {
+    return new Promise((resolve, reject) => {
+      this.git.log((err, log) => {
+        if (err)
+          return reject(err);
+        resolve(new Commit(log.all[0]));
+      })
+    });
+  }
+}
+
+const Git = {
+  Clone: (repo, localdir) => {
+    return new Promise((resolve, reject) => {
+      const g = SimpleGit(localdir);
+      g.clone(repo, './', (err) => {
+        if (err)
+          return reject(err);
+        resolve(new Repo(g));
+      });
+    });
+  }
 }
 
 export class GitAddon {
