@@ -75,7 +75,7 @@ export async function copyFoldersTo(folders, dest) {
 
   const awaits = [];
   for (let folder of folders) {
-    let newFolder = folder.split('\\'); // TODO unix
+    let newFolder = folder.split(path.sep);
     newFolder = newFolder[newFolder.length - 1];
     let newDest = path.join(dest, newFolder);
     log.info('copyFoldersTo', 'copying ' + folder + ' to ' + newDest);
