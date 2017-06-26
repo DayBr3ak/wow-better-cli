@@ -52,7 +52,18 @@ export async function obtainZipFile(source, addon, url, nocache, cachedir) {
   return zipfilename;
 }
 
-function unzip(zipfile, output) {
+function getFoldersFromFiles(files) {
+  const folders = [];
+  for (let file of files) {
+    let folder = file.split(path.sep)[0];
+    if (folders.indexOf(folder) === -1) {
+      folders.push(folder);
+    }
+  }
+  return folders;
+}
+
+export function extractZip(zipfile, output) {
   return new Promise((resolve, reject) => {
     const unzipper = new DecompressZip(zipfile);
     let failed = false;
@@ -72,19 +83,22 @@ function unzip(zipfile, output) {
       }
     });
     unzipper.on('list', (files) => {
-      resolve(files);
+      resolve(getFoldersFromFiles(files));
     });
   });
 }
 
-export async function extractZip(zipfile, output) {
-  const files = await unzip(zipfile, output);
-  const folders = [];
-  for (let file of files) {
-    let folder = file.split(path.sep)[0];
-    if (folders.indexOf(folder) === -1) {
-      folders.push(folder);
-    }
-  }
-  return folders;
+export function listZipFolders(zipfile) {
+  return new Promise((resolve, reject) => {
+    const unzipper = new DecompressZip(zipfile);
+    unzipper.on('error', (err) => {
+      reject(err);
+    });
+    unzipper.on('list', (files) => {
+      resolve(getFoldersFromFiles(files));
+    });
+    unzipper.list();
+  });
 }
+
+
